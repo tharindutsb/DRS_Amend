@@ -1,0 +1,3 @@
+CASE_DETAIL_COLLECTION_NAME = "Case_details"
+TMP_CASE_DISTRIBUTION_DRC ="Tmp_Case_Distribution_DRC_Details"
+TMP_CASE_DISTRIBUTION_DRC_SUMMARY="Case_Distribution_DRC_Summary"
