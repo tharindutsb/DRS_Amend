@@ -1,28 +1,21 @@
-from pymongo import MongoClient
-import datetime
-from utils.DB_Config import CASE_COLLECTION, TRANSACTION_COLLECTION
-from utils.connectDB import get_db_connection
+from get_amend_plan import get_amend_plan
+from balance_resources import balance_resources
 
-db = get_db_connection()
-
-def get_latest_batch_seq():
+def amend_resources(amend_request):
+    """
+    Handles the amendment request by fetching data from MongoDB, balancing resources, and updating MongoDB.
+    
+    :param amend_request: The amendment request containing rtom, donor_drc_id, receiver_drc_id, and transfer_count.
+    :return: Updated DRCs with case IDs after balancing.
+    """
     try:
-        last_record = db[TRANSACTION_COLLECTION].find_one({}, sort=[("batch_seq", -1)])
-        return last_record["batch_seq"] + 1 if last_record else 1
+        # Fetch data from MongoDB and get the amendment plan
+        drcs, receiver_drc, donor_drc, rtom, transfer_value = get_amend_plan()
+
+        # Perform the balance operation
+        updated_drcs = balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value)
+
+        return updated_drcs
     except Exception as e:
-        print(f"❌ Error fetching batch_seq: {e}")
-        return None
-
-def add_amendment_record(amendment_data):
-    try:
-        batch_seq = get_latest_batch_seq()
-        if batch_seq is None:
-            return {"error": "Failed to fetch batch_seq"}
-
-        amendment_data["batch_seq"] = batch_seq
-        amendment_data["created_dtm"] = datetime.datetime.utcnow()
-
-        db[TRANSACTION_COLLECTION].insert_one(amendment_data)
-        return {"message": "✅ Amendment record added successfully", "batch_seq": batch_seq}
-    except Exception as e:
-        return {"error": f"❌ Database error: {str(e)}"}
+        print(f"Error in amend_resources: {e}")
+        raise e
