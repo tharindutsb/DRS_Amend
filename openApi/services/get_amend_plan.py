@@ -21,7 +21,8 @@ def get_amend_plan():
         
         # Get the database connection
         db = get_db_connection()
-        if not db:
+        if db is None:
+
             error_msg = "Failed to connect to the database"
             logger.error(error_msg)
             raise Exception(error_msg)
