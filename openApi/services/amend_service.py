@@ -1,11 +1,8 @@
 from openApi.services.get_amend_plan import get_amend_plan
-
 from openApi.services.balance_resources import balance_resources
-
 from logger.loggers import get_logger
 
 logger = get_logger(__name__)
-
 
 def amend_resources(amend_request):
     """
@@ -20,8 +17,6 @@ def amend_resources(amend_request):
         
         # Fetch data from MongoDB and get the amendment plan
         drcs, receiver_drc, donor_drc, rtom, transfer_value = get_amend_plan()
-
-
         logger.debug(f"Retrieved amendment plan: {receiver_drc}, {donor_drc}, {rtom}, {transfer_value}")
 
         # Perform the balance operation

@@ -1,16 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from openApi.models.amend_model import AmendRequest
-
+from openApi.services.amend_service import amend_resources
 from openApi.services.get_amend_plan import get_amend_plan
 from openApi.services.balance_resources import balance_resources
 from openApi.services.update_amend_drcs import update_drcs_in_mongo
-
 from datetime import datetime
 from utils.connectDB import get_db_connection
-import logging
+from logger.loggers import get_logger
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 @router.post("/amend")
 async def create_amend(amend_request: AmendRequest):
@@ -20,7 +19,7 @@ async def create_amend(amend_request: AmendRequest):
     try:
         # Get database connection
         db = get_db_connection()
-        if not db:
+        if db is None:
             logger.error("Failed to connect to database")
             raise HTTPException(status_code=500, detail="Database connection failed")
 

@@ -1,7 +1,9 @@
 from utils.connectDB import get_db_connection
 from logger.loggers import get_logger
+import pymongo
 
 logger = get_logger(__name__)
+
 
 
 def get_amend_plan():
@@ -21,21 +23,41 @@ def get_amend_plan():
         
         # Get the database connection
         db = get_db_connection()
-        if db is None:
+        if db is None or not isinstance(db, pymongo.database.Database):
 
-            error_msg = "Failed to connect to the database"
+
+            error_msg = "Failed to establish valid database connection"
             logger.error(error_msg)
-            raise Exception(error_msg)
+            raise ConnectionError(error_msg)
+
 
 
         # Access the case_distribution_drc_transactions collection
-        collection = db["case_distribution_drc_transactions"]
-        logger.debug("Accessed case_distribution_drc_transactions collection")
+        try:
+            collection = db["case_distribution_drc_transactions"]
+            if not isinstance(collection, pymongo.collection.Collection):
+                raise ValueError("Invalid collection type")
+            logger.debug("Successfully accessed case_distribution_drc_transactions collection")
+        except Exception as e:
+            error_msg = f"Failed to access collection: {str(e)}"
+            logger.error(error_msg)
+            raise ConnectionError(error_msg)
+
 
         # Fetch the latest amendment plan
-        transaction_record = collection.find_one(sort=[("batch_seq_details.batch_seq", -1)])
-        if transaction_record:
-            logger.debug("Found transaction record")
+        try:
+            transaction_record = collection.find_one(sort=[("batch_seq_details.batch_seq", -1)])
+            if not transaction_record:
+                error_msg = "No transaction records found in collection"
+                logger.warning(error_msg)
+                raise ValueError(error_msg)
+            logger.debug(f"Found transaction record with ID: {transaction_record.get('_id')}")
+        except Exception as e:
+            error_msg = f"Error fetching transaction record: {str(e)}"
+            logger.error(error_msg)
+            raise ConnectionError(error_msg)
+
+
             for batch_seq_detail in transaction_record.get("batch_seq_details", []):
                 if batch_seq_detail.get("action_type") == "amend":
                     logger.debug("Found amend action in batch sequence details")
