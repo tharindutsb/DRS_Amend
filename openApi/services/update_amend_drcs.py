@@ -1,4 +1,8 @@
 from utils.connectDB import get_db_connection
+from logger.loggers import get_logger
+
+logger = get_logger(__name__)
+
 
 def update_drcs_in_mongo(updated_drcs, amend_status, amend_description):
     """
@@ -9,10 +13,15 @@ def update_drcs_in_mongo(updated_drcs, amend_status, amend_description):
     :param amend_description: Description of the amendment (success details or error message).
     """
     try:
+        logger.info("Starting MongoDB update for DRCs")
+        
         # Get the database connection
         db = get_db_connection()
         if not db:
-            raise Exception("Failed to connect to the database.")
+            error_msg = "Failed to connect to the database"
+            logger.error(error_msg)
+            raise Exception(error_msg)
+
 
         # Access the case_distribution_drc collection
         collection = db["case_distribution_drc"]
@@ -34,9 +43,12 @@ def update_drcs_in_mongo(updated_drcs, amend_status, amend_description):
                         }
                     }
                 )
-                print(f"Updated Case ID {case_id}: NEW_DRC_ID -> {new_drc}")
+                logger.info(f"Updated Case ID {case_id}: NEW_DRC_ID -> {new_drc}")
             else:
-                print(f"Skipped Case ID {case_id}: No change in DRC.")
+                logger.debug(f"Skipped Case ID {case_id}: No change in DRC.")
+                
+        logger.info("Successfully updated DRCs in MongoDB")
+        
     except Exception as e:
-        print(f"Error updating DRCs in MongoDB: {e}")
-        raise e
+        logger.error(f"Error updating DRCs in MongoDB: {str(e)}", exc_info=True)
+        raise Exception(f"Failed to update DRCs: {str(e)}") from e

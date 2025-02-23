@@ -1,5 +1,10 @@
 from collections import defaultdict
-from update_amend_drcs import update_drcs_in_mongo
+from openApi.services.update_amend_drcs import update_drcs_in_mongo
+
+from logger.loggers import get_logger
+
+logger = get_logger(__name__)
+
 
 def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
     """
@@ -17,12 +22,13 @@ def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
     for case_id, (drc, resource) in drcs.items():
         resource_tracker[drc][resource].append(case_id)
 
-    # Print initial state
-    print("Initial DRCs with Case IDs:")
+    # Log initial state
+    logger.debug("Initial DRCs with Case IDs:")
     for drc, resources in resource_tracker.items():
-        print(f"{drc}:")
+        logger.debug(f"{drc}:")
         for resource, case_ids in resources.items():
-            print(f"  {resource}: {case_ids}")
+            logger.debug(f"  {resource}: {case_ids}")
+
 
     try:
         # Step 1: Check if receiver_drc and donor_drc exist
@@ -68,12 +74,12 @@ def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
                 remaining_value -= 1
             index += 1  # Move to the next resource in the round-robin cycle
 
-        # Print final balanced state
-        print(f"\nBalanced DRCs with Case IDs (Transfer Value = {transfer_value}):")
+        # Log final balanced state
+        logger.debug(f"Balanced DRCs with Case IDs (Transfer Value = {transfer_value}):")
         for drc, resources in resource_tracker.items():
-            print(f"{drc}:")
+            logger.debug(f"{drc}:")
             for resource, case_ids in resources.items():
-                print(f"  {resource}: {case_ids}")
+                logger.debug(f"  {resource}: {case_ids}")
 
         # Convert resource_tracker back to the original drcs format
         updated_drcs = {}
@@ -82,10 +88,11 @@ def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
                 for case_id in case_ids:
                     updated_drcs[case_id] = [drc, resource]
         
-        # Print the final updated drcs dictionary
-        print("\nFinal Updated DRCs with Case IDs:")
+        # Log the final updated drcs dictionary
+        logger.debug("Final Updated DRCs with Case IDs:")
         for case_id, (drc, resource) in updated_drcs.items():
-            print(f"{case_id}: [{drc}, {resource}]")
+            logger.debug(f"{case_id}: [{drc}, {resource}]")
+
 
         # If successful, update MongoDB with success status
         amend_description = f"Successfully transferred {transfer_value} cases of {rtom} from {donor_drc} to {receiver_drc}."
@@ -94,6 +101,7 @@ def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
 
     except ValueError as e:
         # If an error occurs, update MongoDB with failure status and error message
-        print(f"Error: {e}")
+        logger.error(f"Resource balancing failed: {str(e)}", exc_info=True)
+
         update_drcs_in_mongo(drcs, "Failed", str(e))
         return drcs
