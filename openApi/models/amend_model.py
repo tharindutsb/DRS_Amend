@@ -1,5 +1,11 @@
 from pydantic import BaseModel
 from typing import Optional, List
+from enum import Enum
+
+class TaskStatus(str, Enum):
+    OPEN = "open"
+    IN_PROGRESS = "in-progress"
+    COMPLETED = "completed"
 
 class Distribution(BaseModel):
     drc: Optional[str] = None
@@ -16,7 +22,9 @@ class BatchSeqDetail(BaseModel):
     action_type: str
     array_of_distributions: List[Distribution]
     batch_seq_rulebase_count: int
+    task_status: TaskStatus = TaskStatus.OPEN
 
 class AmendRequest(BaseModel):
     case_distribution_batch_id: str
     batch_seq_details: List[BatchSeqDetail]
+    task_status: TaskStatus = TaskStatus.OPEN

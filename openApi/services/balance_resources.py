@@ -16,7 +16,18 @@ def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
     :param rtom: The resource to modify (e.g., 'R1').
     :param transfer_value: The value to transfer between resources.
     :return: Updated DRCs with case IDs after balancing.
+        
+                    D1:
+                        CW: [4, 3, 1, 9, 11, 15, 17, 19]
+                        AG: [2, 13]
+                    D2:
+                        AG: [8, 6, 10, 14, 18]
+                        CW: [7, 12, 20]
+                        AD: [5, 16]
+                        Error: Insufficient resources in D2 for the Balance.
+    
     """
+            
     # Convert drcs to a format that tracks resources and their case IDs
     resource_tracker = defaultdict(lambda: defaultdict(list))
     for case_id, (drc, resource) in drcs.items():
