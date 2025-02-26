@@ -1,14 +1,35 @@
-# Collection for case details
-CASE_COLLECTION = "case_distribution_drc"
+import configparser
+import os
+from utils.connectDB import get_db_connection
 
-# Collection for transaction details
-TRANSACTION_COLLECTION = "Case_distribution_drc_transactions"
+# Construct the path to the DB_Config.ini file
+config_path = os.path.join(os.path.dirname(__file__), "../Config/DB_Config.ini")
 
-# Collection for drc summery
-CASE_DRC_SUMMERY="DRS_Database.Case_Distribution_DRC_Summary"
+# Initialize ConfigParser
+config = configparser.ConfigParser()
 
-# Collection for system task appending
-SYSTEM_TASKS="System_tasks"
+# Read the configuration file
+config.read(config_path)
 
-# collection for template task [config]
-TEMPLATE_TASK="Template_task"
+# Collection names
+CASE_COLLECTION = config['COLLECTIONS'].get('CASE_COLLECTION')
+TRANSACTION_COLLECTION = config['COLLECTIONS'].get('TRANSACTION_COLLECTION')
+CASE_DRC_SUMMARY = config['COLLECTIONS'].get('CASE_DRC_SUMMARY')
+SYSTEM_TASK = config['COLLECTIONS'].get('SYSTEM_TASKS')
+TEMPLATE_TASK = config['COLLECTIONS'].get('TEMPLATE_TASK')
+
+# Establish database connection
+db = get_db_connection()
+if db is None:
+    raise RuntimeError("Failed to connect to the database.")
+
+
+
+
+# Test the database connection
+if __name__ == "__main__":
+    db_connection = get_db_connection()
+    if db_connection is not None:
+        print("Database connection established.")
+    else:
+        print("Database connection failed.")

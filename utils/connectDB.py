@@ -36,7 +36,35 @@ def get_db_connection():
     except Exception as e:
         print(f"Error connecting to MongoDB: {e}")
         return None
+    
 
+# Initialize collections
+def initialize_collections(db):
+    """
+    Initializes the collections using the database connection.
+    
+    Args:
+        db: MongoDB database object.
+    
+    Returns:
+        dict: A dictionary of collections.
+    """
+    # Collection names
+    CASE_COLLECTION = "DRS.Tmp_Case_Distribution_DRC"
+    TRANSACTION_COLLECTION = "Case_distribution_drc_transactions"
+    CASE_DRC_SUMMARY = "DRS_Database.Case_Distribution_DRC_Summary"
+    SYSTEM_TASK = "System_tasks"
+    TEMPLATE_TASK = "Template_task"
+
+    # Initialize collections
+    collections = {
+        "case_collection": db[CASE_COLLECTION],
+        "transaction_collection": db[TRANSACTION_COLLECTION],
+        "summary_collection": db[CASE_DRC_SUMMARY],
+        "system_task_collection": db[SYSTEM_TASK],
+        "template_task_collection": db[TEMPLATE_TASK],
+    }
+    return collections
 
 if __name__ == "__main__":
     db_connection = get_db_connection()
