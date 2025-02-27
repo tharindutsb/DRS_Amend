@@ -4,8 +4,9 @@ import threading
 from utils.connectDB import get_db_connection,initialize_collections # import database connections 
 from logger.loggers import get_logger  # Import the logger
 
-# Initialize logger
-logger = get_logger(__name__)
+# # Initialize logger
+logger = get_logger('name1,name2')
+                    
 
 # Database connection and collections
 db = get_db_connection()
