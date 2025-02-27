@@ -1,11 +1,14 @@
 from fastapi import FastAPI
 import logging
-from openApi.routes.amend_routes import router as amend_router
+from openApi.services.amend_processing_service import process_tasks 
+from logger.loggers import get_logger
 
 app = FastAPI()
 
-# #setup logging
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
-
-app.include_router(amend_router)
+# Initialize logger
+logger = get_logger(__name__)
+                    
+if __name__ == "__main__":
+    logging.info("Starting task processing...")
+    process_tasks()
+    logging.info("Task processing completed.")

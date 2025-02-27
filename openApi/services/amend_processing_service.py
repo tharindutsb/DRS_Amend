@@ -1,8 +1,9 @@
 from datetime import datetime
 from collections import defaultdict
-import threading
-from utils.connectDB import get_db_connection,initialize_collections
+import threading 
+from utils.connectDB import get_db_connection,initialize_collections # import database connections 
 from logger.loggers import get_logger  # Import the logger
+
 # Initialize logger
 logger = get_logger(__name__)
 
