@@ -1,21 +1,23 @@
 import logging
 import logging.config
+import os
 
-# Load logger configuration from the ini file
-config_file = 'logger/loggers.ini'
+# Ensure the logs directory exists
+logs_dir = os.path.join(os.path.dirname(__file__), "logs")
+os.makedirs(logs_dir, exist_ok=True)
+
+# Load logger configuration from loggers.ini
+config_file = os.path.join(os.path.dirname(__file__), "loggers.ini")
 logging.config.fileConfig(config_file)
 
-# Get loggers by their names
-logger = logging.getLogger('name1')
-logger = logging.getLogger('name2')
-
-# # Example logging
-# logger.info("This is an info message from logger_name1")
-# logger.info("This is an info message from logger_name2")
-
-def get_logger(name: str) -> logging.getLogger:
+def get_logger(name: str) -> logging.Logger:
     """
-    Get a logger by its name.
+    Retrieves a logger with the specified name.
+    
+    Args:
+        name (str): The name of the logger.
+    
+    Returns:
+        logging.Logger: The configured logger.
     """
     return logging.getLogger(name)
-

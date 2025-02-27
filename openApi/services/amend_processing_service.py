@@ -1,12 +1,23 @@
+# /* 
+#     Purpose: This template is used for the DRC Amend.
+#     Created Date: 2025-01-08
+#     Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(email),Amupama(email)
+#     Last Modified Date: 2024-01-19
+#     Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(email),Amupama(email)     
+#     Version: Node.js v20.11.1
+#     Dependencies: express
+#     Related Files: Case_controller.js
+#     Notes:  
+# */
+
 from datetime import datetime
 from collections import defaultdict
-import threading 
-from utils.connectDB import get_db_connection,initialize_collections # import database connections 
+import threading
+from utils.connectDB import get_db_connection, initialize_collections
 from logger.loggers import get_logger  # Import the logger
 
-# # Initialize logger
-logger = get_logger('name1,name2')
-                    
+# Initialize logger
+logger = get_logger("name1")  # Use "name1" logger
 
 # Database connection and collections
 db = get_db_connection()
