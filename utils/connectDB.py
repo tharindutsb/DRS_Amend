@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import os
 
 def get_db_connection():
-    config_path = os.path.join(os.path.dirname(__file__), "../Config/database/DB_Config.ini")
+    config_path = os.path.join(os.path.dirname(__file__), "../Config/DB_Config.ini")
 
     # Check if configuration file exists
     if not os.path.exists(config_path):
