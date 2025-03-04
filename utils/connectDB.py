@@ -2,6 +2,14 @@ import configparser
 from pymongo import MongoClient
 import os
 
+# collection names
+CASE_COLLECTION = "DRS.Tmp_Case_Distribution_DRC"
+TRANSACTION_COLLECTION = "Case_distribution_drc_transactions"
+CASE_DRC_SUMMARY = "DRS_Database.Case_Distribution_DRC_Summary"
+SYSTEM_TASKS = "System_tasks"
+TEMPLATE_TASK = "Template_task"
+
+
 def get_db_connection():
     config_path = os.path.join(os.path.dirname(__file__), "../Config/DB_Config.ini")
 

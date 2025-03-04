@@ -17,14 +17,10 @@ from utils.connectDB import get_db_connection, initialize_collections
 from logger.loggers import get_logger  # Import the logger
 
 # Initialize logger
-logger = get_logger("drc_amend_processing_logger")  # Use "name1" logger
+logger = get_logger("drc_amend_processing_logger")  # Use logger
 
-# Database connection and collections
-db = get_db_connection()
-if db is None:
-    raise RuntimeError("Failed to connect to the database.")
-
-collections = initialize_collections(db)
+# Initialize MongoDB collections
+collections = initialize_collections( get_db_connection())
 case_collection = collections["case_collection"]
 transaction_collection = collections["transaction_collection"]
 summary_collection = collections["summary_collection"]
