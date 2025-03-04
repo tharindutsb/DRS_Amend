@@ -17,7 +17,7 @@ from utils.connectDB import get_db_connection, initialize_collections
 from logger.loggers import get_logger  # Import the logger
 
 # Initialize logger
-logger = get_logger("drc_amend_processing_logger")  # Use logger
+logger = get_logger("amend_status_logger")  # Use logger
 
 # Initialize MongoDB collections
 collections = initialize_collections( get_db_connection())
