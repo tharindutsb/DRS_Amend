@@ -17,7 +17,7 @@ from utils.connectDB import get_db_connection, initialize_collections
 from logger.loggers import get_logger  # Import the logger
 
 # Initialize logger
-logger = get_logger("name1")  # Use "name1" logger
+logger = get_logger("drc_amend_processing_logger")  # Use "name1" logger
 
 # Database connection and collections
 db = get_db_connection()
