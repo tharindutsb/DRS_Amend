@@ -4,7 +4,7 @@ from logger.loggers import get_logger
 
 
 # Initialize logger
-logger = get_logger("name2")
+logger = get_logger("task_status_logger")
                     
 if __name__ == "__main__":
     logger.info("Starting task processing...")
