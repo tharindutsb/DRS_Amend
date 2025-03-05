@@ -1,0 +1,62 @@
+[
+  {
+    "Case_Distribution_Batch_ID": "Batch_005",
+    "RTOM": "CW",
+    "DRC_Id": "D1",
+    "Count": 8,
+    "Tot_Arrease": 15300,
+    "Month_1_SR": null,
+    "Month_2_SR": null,
+    "Month_3_SR": null
+  },
+  {
+    "Case_Distribution_Batch_ID": "Batch_005",
+    "RTOM": "AG",
+    "DRC_Id": "D1",
+    "Count": 4,
+    "Tot_Arrease": 5000,
+    "Month_1_SR": null,
+    "Month_2_SR": null,
+    "Month_3_SR": null
+  },
+  {
+    "Case_Distribution_Batch_ID": "Batch_005",
+    "RTOM": "AD",
+    "DRC_Id": "D1",
+    "Count": 5,
+    "Tot_Arrease": 5000,
+    "Month_1_SR": null,
+    "Month_2_SR": null,
+    "Month_3_SR": null
+  },
+  {
+    "Case_Distribution_Batch_ID": "Batch_005",
+    "RTOM": "AG",
+    "DRC_Id": "D2",
+    "Count": 5,
+    "Tot_Arrease": 7800,
+    "Month_1_SR": null,
+    "Month_2_SR": null,
+    "Month_3_SR": null
+  },
+  {
+    "Case_Distribution_Batch_ID": "Batch_005",
+    "RTOM": "CW",
+    "DRC_Id": "D2",
+    "Count": 3,
+    "Tot_Arrease": 7600,
+    "Month_1_SR": null,
+    "Month_2_SR": null,
+    "Month_3_SR": null
+  },
+  {
+    "Case_Distribution_Batch_ID": "Batch_005",
+    "RTOM": "AD",
+    "DRC_Id": "D2",
+    "Count": 6,
+    "Tot_Arrease": 22700,
+    "Month_1_SR": null,
+    "Month_2_SR": null,
+    "Month_3_SR": null
+  }
+]

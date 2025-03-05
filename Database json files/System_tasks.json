@@ -1,0 +1,47 @@
+[{
+  "Task_Id": 1,
+  "Template_Task_Id": 26,
+  "task_type": "Case Amend Planning among DRC",
+  "parameters": {
+    "Case_Distribution_Batch_ID" :"Batch_005"
+  },
+  "Created_By": "Sys",
+  "Execute_By": "SYS",
+  "Sys_Alert_ID": null,
+  "Interaction_ID_Success": null,
+  "Interaction_ID_Error": null,
+  "Task_Id_Error": null,
+  "end_dtm": null,
+  "task_status": "open",
+  "status_changed_dtm": null,
+  "status_description": "",
+  "created_dtm": {
+    "$date": "2025-02-17T09:27:28.371Z"
+  },
+  "__v": 0
+},
+{
+  "Task_Id": 1,
+  "Template_Task_Id": 3,
+  "task_type": "Case Distribution Planning among DRC",
+  "parameters": {
+    "Case_Distribution_Batch_ID" :1
+  },
+  "Created_By": "Sys",
+  "Execute_By": "SYS",
+  "Sys_Alert_ID": null,
+  "Interaction_ID_Success": null,
+  "Interaction_ID_Error": null,
+  "Task_Id_Error": null,
+  "end_dtm": null,
+  "task_status": "open",
+  "status_changed_dtm": null,
+  "status_description": "",
+  "created_dtm": {
+    "$date": "2025-02-17T09:27:28.371Z"
+  },
+  "__v": 0
+}
+]
+
+

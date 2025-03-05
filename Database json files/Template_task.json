@@ -1,0 +1,16 @@
+[
+    {
+      "task_type": "Case Amend Planning among DRC",
+      "parameters": {
+        "Case_Distribution_Batch_ID": "Batch_005"
+      },
+      "Template_Task_Id": 26
+    },
+    {
+      "task_type": "Case Distribution Planning among DRC",
+      "parameters": {
+        "Case_Distribution_Batch_ID": "Batch_005"
+      },
+      "Template_Task_Id": 3
+    }
+  ]
