@@ -135,8 +135,7 @@ def fetch_transaction_details(transaction_collection, case_distribution_batch_id
 #         raise
 def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
     """
-    Fetches cases that match the given batch ID from the DRS.Tmp_Case_Distribution_DRC collection
-    and prints the retrieved data.
+    Fetches cases that match the given batch ID from the DRS.Tmp_Case_Distribution_DRC collection.
     """
     try:
         logger.info(f"Fetching cases for Batch ID {case_distribution_batch_id} from DRS.Tmp_Case_Distribution_DRC collection...")
@@ -147,19 +146,10 @@ def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
         cases = list(cases_cursor)  # Convert cursor to a list
         logger.info(f"Found {len(cases)} cases for Batch ID {case_distribution_batch_id}.")
         
-        # Print retrieved data
-        if cases:
-            logger.info("Printing retrieved cases:")
-            for case in cases:
-                print(case)  # Print each document in the result
-        else:
-            logger.info("No cases found for the given Batch ID.")
-
         return cases
     except Exception as e:
         logger.error(f"Failed to fetch cases for batch ID {case_distribution_batch_id}: {e}")
         raise
-
 
 
 def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
