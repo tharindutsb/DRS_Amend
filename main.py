@@ -2,7 +2,6 @@ from actionManipulation.amend_processing_service import process_tasks
 from logger.loggers import get_logger
 
 
-
 # Initialize logger
 logger = get_logger("task_status_logger")
                     
