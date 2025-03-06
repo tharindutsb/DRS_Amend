@@ -5,6 +5,7 @@ from actionManipulationCopy.balance_resources import balance_resources
 from actionManipulationCopy.update_databases import update_case_distribution_collection, update_summary_in_mongo
 
 
+
 # Initialize logger
 logger = get_logger("task_processor_logger")
 
@@ -71,7 +72,7 @@ def process_single_batch(task, case_collection, transaction_collection, summary_
                 update_case_distribution_collection(case_collection, updated_drcs, existing_drcs)
 
                 # Step 8: Update summary in MongoDB
-                update_summary_in_mongo(summary_collection, updated_drcs, case_distribution_batch_id)
+                update_summary_in_mongo(summary_collection, transaction_collection, updated_drcs, case_distribution_batch_id)
 
             finally:
                 # Release lock and mark DRCs as inactive
