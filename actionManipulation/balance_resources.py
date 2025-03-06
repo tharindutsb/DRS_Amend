@@ -1,3 +1,19 @@
+
+'''
+####### py file is as follows:
+
+    Purpose: This template is used for the DRC Amend.
+    Created Date: 2025-01-08
+    Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
+    Last Modified Date: 2024-01-19
+    Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
+    Version: Node.js v20.11.1
+    Dependencies: express
+    Related Files: Case_controller.js
+    Notes:  
+'''
+
+
 from collections import defaultdict
 
 def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):

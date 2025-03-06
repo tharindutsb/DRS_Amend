@@ -1,3 +1,18 @@
+'''
+####### py file is as follows:
+
+    Purpose: This template is used for the DRC Amend.
+    Created Date: 2025-01-08
+    Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
+    Last Modified Date: 2024-01-19
+    Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
+    Version: Node.js v20.11.1
+    Dependencies: express
+    Related Files: Case_controller.js
+    Notes:  
+'''
+
+
 from datetime import datetime
 from logger.loggers import get_logger
 
@@ -17,7 +32,7 @@ def update_task_status(system_task_collection, task_id, status):
     except Exception as e:
         logger.error(f"Failed to update task status for Task ID {task_id}: {e}")
         raise
-
+    #catch with one collection and add final exception
 def fetch_and_validate_template_task(template_task_collection, template_task_id, task_type):
     """
     Fetches and validates the template task from the template_task collection.
@@ -45,7 +60,9 @@ def fetch_transaction_details(transaction_collection, case_distribution_batch_id
         logger.info(f"Querying transaction collection for Batch ID: {case_distribution_batch_id}...")
         transaction_record = transaction_collection.find_one({
             "Case_Distribution_Batch_ID": case_distribution_batch_id,
-            "summery_status": "open"
+            "summery_status": "open",
+            "batch_seq_details.CRD_Distribution_Status":"open"
+
         })
         if not transaction_record:
             raise ValueError(f"No open transaction record found for Batch ID {case_distribution_batch_id}.")
@@ -80,9 +97,10 @@ def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
     """
     try:
         logger.info(f"Fetching cases for Batch ID {case_distribution_batch_id}...")
+        #distributed cases change name cases to distributed_cases
         cases = list(case_collection.find({"Case_Distribution_Batch_ID": case_distribution_batch_id}))
         logger.info(f"Found {len(cases)} cases for Batch ID {case_distribution_batch_id}.")
         return cases
     except Exception as e:
         logger.error(f"Failed to fetch cases for batch ID {case_distribution_batch_id}: {e}")
-        raise
+        raise # fix this raise statement

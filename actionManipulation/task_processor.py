@@ -1,9 +1,23 @@
+'''
+####### py file is as follows:
+
+    Purpose: This template is used for the DRC Amend.
+    Created Date: 2025-01-08
+    Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
+    Last Modified Date: 2024-01-19
+    Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
+    Version: Node.js v20.11.1
+    Dependencies: express
+    Related Files: Case_controller.js
+    Notes:  
+'''
+
 import threading
 from logger.loggers import get_logger
-from actionManipulationCopy.database_checks import update_task_status, fetch_and_validate_template_task, fetch_transaction_details, fetch_cases_for_batch
-from actionManipulationCopy.balance_resources import balance_resources
-from actionManipulationCopy.update_databases import update_case_distribution_collection, update_summary_in_mongo
-
+from actionManipulation.database_checks import update_task_status, fetch_and_validate_template_task, fetch_transaction_details, fetch_cases_for_batch
+from actionManipulation.balance_resources import balance_resources
+from actionManipulation.update_databases import update_case_distribution_collection, update_summary_in_mongo
+from utils.connectDB import get_initialized_collections
 
 
 # Initialize logger
@@ -28,15 +42,17 @@ def process_single_batch(task, case_collection, transaction_collection, summary_
 
         # Step 2: Fetch and validate template task
         template_task = fetch_and_validate_template_task(template_task_collection, template_task_id, task_type)
-
+#program fatel err  and catch the exception and log it //do it 
         # Step 3: Fetch transaction details
         amend_details = fetch_transaction_details(transaction_collection, case_distribution_batch_id)
 
         # Step 4: Fetch cases for the batch
         cases = fetch_cases_for_batch(case_collection, case_distribution_batch_id)
+        # drcs create in to this cases fetch batch 
+#
 
         # Convert cases to a dictionary format for balancing logic
-        drcs = {}
+        drcs = {} 
         existing_drcs = {}
         for case in cases:
             if "Case_Id" in case and "DRC_Id" in case and "RTOM" in case:
@@ -63,7 +79,7 @@ def process_single_batch(task, case_collection, transaction_collection, summary_
                 # Mark DRCs as active
                 active_amendments.add(receiver_drc)
                 active_amendments.add(donor_drc)
-
+            #remove this locking mechanism #####
             try:
                 # Step 6: Run the balancing logic
                 updated_drcs, amend_description = balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value)
@@ -99,14 +115,14 @@ def process_tasks(case_collection, transaction_collection, summary_collection, s
             "task_type": "Case Amend Planning among DRC"
         }))
         logger.info(f"Found {len(open_tasks)} open tasks.")
-
+# // check the if not open task is empty ......
         # Process tasks in parallel using threads
         threads = []
         for task in open_tasks:
             thread = threading.Thread(
                 target=process_single_batch,
                 args=(task, case_collection, transaction_collection, summary_collection, system_task_collection, template_task_collection)
-            )
+            )#don't push entire collections to the thread list
             threads.append(thread)
             thread.start()
 
@@ -116,3 +132,23 @@ def process_tasks(case_collection, transaction_collection, summary_collection, s
 
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
+        
+def amend_task_processing():
+    """
+    Initializes database collections and runs task processing.
+    """
+    logger.info("Initializing database collections for task processing...")
+
+    # Get collections from MongoDB
+    collections = get_initialized_collections()
+
+    # Run task processing
+    process_tasks(
+        collections["case_collection"],#identify the collections
+        collections["transaction_collection"],#identify the collections
+        collections["summary_collection"],#identify the collections
+        collections["system_task_collection"],#identify the collections
+        collections["template_task_collection"]#identify the collections
+    )
+
+    # logger.info("Task processing completed.")
