@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 '''
 ####### py file is as follows:
 
@@ -15,7 +13,6 @@
 '''
 
 import threading
->>>>>>> 91954c9b5b87bedca4167d45967c697aaa338074
 from logger.loggers import get_logger
 from actionManipulation.database_checks import update_task_status, fetch_and_validate_template_task, fetch_transaction_details, fetch_cases_for_batch
 from actionManipulation.balance_resources import balance_resources
@@ -137,17 +134,10 @@ def amend_task_processing():
 
     # Run task processing
     process_tasks(
-<<<<<<< HEAD
-        collections["case_collection"],
-        collections["transaction_collection"],
-        collections["summary_collection"],
-        collections["system_task_collection"],
-        collections["template_task_collection"]
-=======
         collections["case_collection"], # DRS.Tmp_Case_Distribution_DRC collection
         collections["transaction_collection"], # Case_distribution_drc_transactions collection
         collections["summary_collection"], # DRS_Database.Case_Distribution_DRC_Summary collection 
         collections["system_task_collection"], # System_tasks collection
         collections["template_task_collection"] # Template_task_collection
->>>>>>> 91954c9b5b87bedca4167d45967c697aaa338074
+
     )
