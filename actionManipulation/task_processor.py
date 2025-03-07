@@ -144,11 +144,9 @@ def amend_task_processing():
 
     # Run task processing
     process_tasks(
-        collections["case_collection"],#identify the collections
-        collections["transaction_collection"],#identify the collections
-        collections["summary_collection"],#identify the collections
-        collections["system_task_collection"],#identify the collections
-        collections["template_task_collection"]#identify the collections
+        collections["case_collection"], # DRS.Tmp_Case_Distribution_DRC collection
+        collections["transaction_collection"], # Case_distribution_drc_transactions collection
+        collections["summary_collection"], # DRS_Database.Case_Distribution_DRC_Summary collection 
+        collections["system_task_collection"], # System_tasks collection
+        collections["template_task_collection"] # Template_task_collection
     )
-
-    # logger.info("Task processing completed.")
