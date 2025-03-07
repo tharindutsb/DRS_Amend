@@ -10,14 +10,14 @@ update database case distribution collection and summary collection update_datab
     Version: Node.js v20.11.1
     Dependencies: express
     Related Files: Case_controller.js
-    Notes:  
+    Notes:
 '''
 
 from datetime import datetime
 from collections import defaultdict
 from logger.loggers import get_logger
 
-logger = get_logger("update_databases_logger")
+logger = get_logger("amend_status_logger")
 
 def update_case_distribution_collection(case_collection, updated_drcs, existing_drcs):
     """

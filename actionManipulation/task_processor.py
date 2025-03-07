@@ -1,3 +1,21 @@
+<<<<<<< HEAD
+=======
+'''
+####### py file is as follows:
+
+    Purpose: This template is used for the DRC Amend.
+    Created Date: 2025-01-08
+    Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
+    Last Modified Date: 2024-01-19
+    Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
+    Version: Node.js v20.11.1
+    Dependencies: express
+    Related Files: Case_controller.js
+    Notes:
+'''
+
+import threading
+>>>>>>> 91954c9b5b87bedca4167d45967c697aaa338074
 from logger.loggers import get_logger
 from actionManipulation.database_checks import update_task_status, fetch_and_validate_template_task, fetch_transaction_details, fetch_cases_for_batch
 from actionManipulation.balance_resources import balance_resources
@@ -5,7 +23,7 @@ from actionManipulation.update_databases import update_case_distribution_collect
 from utils.connectDB import get_initialized_collections
 
 # Initialize logger
-logger = get_logger("task_processor_logger")
+logger = get_logger("amend_status_logger")
 
 # Track active DRCs being processed
 active_amendments = set()
@@ -119,9 +137,17 @@ def amend_task_processing():
 
     # Run task processing
     process_tasks(
+<<<<<<< HEAD
         collections["case_collection"],
         collections["transaction_collection"],
         collections["summary_collection"],
         collections["system_task_collection"],
         collections["template_task_collection"]
+=======
+        collections["case_collection"], # DRS.Tmp_Case_Distribution_DRC collection
+        collections["transaction_collection"], # Case_distribution_drc_transactions collection
+        collections["summary_collection"], # DRS_Database.Case_Distribution_DRC_Summary collection 
+        collections["system_task_collection"], # System_tasks collection
+        collections["template_task_collection"] # Template_task_collection
+>>>>>>> 91954c9b5b87bedca4167d45967c697aaa338074
     )
