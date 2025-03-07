@@ -16,7 +16,7 @@
 from datetime import datetime
 from logger.loggers import get_logger
 
-logger = get_logger("database_checks_logger")
+logger = get_logger("amend_status_logger")
 
 def update_task_status(system_task_collection, task_id, status):
     """

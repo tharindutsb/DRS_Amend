@@ -21,7 +21,7 @@ from utils.connectDB import get_initialized_collections
 
 
 # Initialize logger
-logger = get_logger("task_processor_logger")
+logger = get_logger("amend_status_logger")
 
 # Locking mechanism for parallel processing
 lock = threading.Lock()
