@@ -1,4 +1,3 @@
-
 import configparser
 from pymongo import MongoClient
 import os
@@ -43,9 +42,9 @@ def get_db_connection():
         logger.error(f"Error connecting to MongoDB: {e}")
         return None
 
-def get_initialized_collections():
+def get_collection(collection_name):
     """
-    Returns initialized collections after establishing a DB connection.
+    Returns a specific collection after establishing a DB connection.
     If the connection fails, logs an error and exits.
     """
     db = get_db_connection()
@@ -53,14 +52,4 @@ def get_initialized_collections():
         logger.error("Database connection failed. Exiting...")
         exit(1)
 
-    collections = {
-        "case_collection": db[CASE_COLLECTION],
-        "transaction_collection": db[TRANSACTION_COLLECTION],
-        "summary_collection": db[CASE_DRC_SUMMARY],
-        "system_task_collection": db[SYSTEM_TASKS],
-        "template_task_collection": db[TEMPLATE_TASK],
-    }
-
-    return collections
-
-
+    return db[collection_name]
