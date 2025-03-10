@@ -29,14 +29,14 @@ def process_single_batch(task):
         transaction_collection = get_collection("Case_distribution_drc_transactions")
         amend_details = fetch_transaction_details(transaction_collection, case_distribution_batch_id)
 
-        # Step 4: Fetch cases for the batch
+        # Step 4: Fetch amend_cases for the batch
         case_collection = get_collection("DRS.Tmp_Case_Distribution_DRC")
-        cases = fetch_cases_for_batch(case_collection, case_distribution_batch_id)
+        amend_cases = fetch_cases_for_batch(case_collection, case_distribution_batch_id)
 
-        # Convert cases to a dictionary format for balancing logic
+        # Convert amend_cases to a dictionary format for balancing logic
         drcs = {} 
         existing_drcs = {}
-        for case in cases:
+        for case in amend_cases:
             if "Case_Id" in case and "DRC_Id" in case and "RTOM" in case:
                 drcs[case["Case_Id"]] = [case["DRC_Id"], case["RTOM"]]
                 existing_drcs[case["Case_Id"]] = case["DRC_Id"]

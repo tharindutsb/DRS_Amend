@@ -77,13 +77,13 @@ def fetch_transaction_details(transaction_collection, case_distribution_batch_id
 
 def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
     """
-    Fetches cases for the given batch ID from the case collection.
+    Fetches amend_cases for the given batch ID from the case collection.
     """
     try:
-        logger.info(f"Fetching cases for Batch ID {case_distribution_batch_id}...")
-        cases = list(case_collection.find({"Case_Distribution_Batch_ID": case_distribution_batch_id}))
-        logger.info(f"Found {len(cases)} cases for Batch ID {case_distribution_batch_id}.")
-        return cases
+        logger.info(f"Fetching amend_cases for Batch ID {case_distribution_batch_id}...")
+        amend_cases = list(case_collection.find({"Case_Distribution_Batch_ID": case_distribution_batch_id}))
+        logger.info(f"Found {len(amend_cases)} amend_cases for Batch ID {case_distribution_batch_id}.")
+        return amend_cases
     except Exception as e:
-        logger.error(f"Failed to fetch cases for batch ID {case_distribution_batch_id}: {e}")
+        logger.error(f"Failed to fetch amend_cases for batch ID {case_distribution_batch_id}: {e}")
         raise
