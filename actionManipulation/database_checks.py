@@ -1,5 +1,5 @@
 from datetime import datetime
-from logger.loggers import get_logger
+from utils.loggers import get_logger
 
 logger = get_logger("amend_status_logger")
 

@@ -1,5 +1,5 @@
 from actionManipulation.task_processor import amend_task_processing
-from logger.loggers import get_logger
+from utils.loggers import get_logger
 
 # Initialize logger
 logger = get_logger("task_status_logger")

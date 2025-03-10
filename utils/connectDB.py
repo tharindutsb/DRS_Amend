@@ -1,7 +1,7 @@
 import configparser
 from pymongo import MongoClient
 import os
-from logger.loggers import get_logger
+from utils.loggers import get_logger
 
 # Collection names
 CASE_COLLECTION = "DRS.Tmp_Case_Distribution_DRC"

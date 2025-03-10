@@ -1,4 +1,4 @@
-from logger.loggers import get_logger
+from utils.loggers import get_logger
 from actionManipulation.database_checks import update_task_status, fetch_and_validate_template_task, fetch_transaction_details, fetch_cases_for_batch
 from actionManipulation.balance_resources import balance_resources
 from actionManipulation.update_databases import update_case_distribution_collection, update_summary_in_mongo

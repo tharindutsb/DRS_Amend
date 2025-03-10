@@ -15,7 +15,7 @@ update database case distribution collection and summary collection update_datab
 
 from datetime import datetime
 from collections import defaultdict
-from logger.loggers import get_logger
+from utils.loggers import get_logger
 
 logger = get_logger("amend_status_logger")
 
