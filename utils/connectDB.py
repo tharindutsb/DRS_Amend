@@ -1,7 +1,10 @@
+# connectDB.py
+
 import configparser
 from pymongo import MongoClient
 import os
 from utils.loggers import get_logger
+from utils.Custom_Exceptions import DatabaseConnectionError
 
 # Collection names
 CASE_COLLECTION = "DRS.Tmp_Case_Distribution_DRC"
@@ -18,21 +21,21 @@ def get_db_connection():
 
     if not os.path.exists(config_path):
         logger.error(f"Configuration file '{config_path}' not found.")
-        return None
+        raise DatabaseConnectionError(f"Configuration file '{config_path}' not found.")
 
     config = configparser.ConfigParser()
     config.read(config_path)
 
     if 'DATABASE' not in config:
         logger.error("'DATABASE' section not found in DB_Config.ini")
-        return None
+        raise DatabaseConnectionError("'DATABASE' section not found in DB_Config.ini")
 
     mongo_uri = config['DATABASE'].get('MONGO_URI', '').strip()
     db_name = config['DATABASE'].get('DB_NAME', '').strip()
 
     if not mongo_uri or not db_name:
         logger.error("Missing MONGO_URI or DB_NAME in DB_Config.ini")
-        return None
+        raise DatabaseConnectionError("Missing MONGO_URI or DB_NAME in DB_Config.ini")
 
     try:
         client = MongoClient(mongo_uri)
@@ -40,7 +43,7 @@ def get_db_connection():
         return db
     except Exception as e:
         logger.error(f"Error connecting to MongoDB: {e}")
-        return None
+        raise DatabaseConnectionError(f"Error connecting to MongoDB: {e}")
 
 def get_collection(collection_name):
     """
@@ -50,6 +53,6 @@ def get_collection(collection_name):
     db = get_db_connection()
     if db is None:
         logger.error("Database connection failed. Exiting...")
-        exit(1)
+        raise DatabaseConnectionError("Database connection failed. Exiting...")
 
     return db[collection_name]
