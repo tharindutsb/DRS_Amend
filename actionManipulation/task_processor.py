@@ -35,16 +35,16 @@ def process_single_batch(task):
         if error:
             raise Exception(error)
 
-        # Step 4: Fetch cases for the batch
+        # Step 4: Fetch amend_cases for the batch
         case_collection = get_collection("DRS.Tmp_Case_Distribution_DRC")
         cases, error = fetch_cases_for_batch(case_collection, case_distribution_batch_id)
         if error:
             raise Exception(error)
 
-        # Convert cases to a dictionary format for balancing logic
+        # Convert amend_cases to a dictionary format for balancing logic
         drcs = {} 
         existing_drcs = {}
-        for case in cases:
+        for case in amend_cases:
             if "Case_Id" in case and "DRC_Id" in case and "RTOM" in case:
                 drcs[case["Case_Id"]] = [case["DRC_Id"], case["RTOM"]]
                 existing_drcs[case["Case_Id"]] = case["DRC_Id"]
