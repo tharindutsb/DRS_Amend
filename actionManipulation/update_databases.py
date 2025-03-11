@@ -1,4 +1,3 @@
-
 '''
 update database case distribution collection and summary collection update_database.py file is as follows:
 
@@ -48,10 +47,10 @@ def update_case_distribution_collection(case_collection, updated_drcs, existing_
                 )
                 logger.debug(f"Update result for Case_Id {case_id}: {result.matched_count} documents matched, {result.modified_count} documents modified.")
 
-        return True, None, original_states  # Success, no error, and original states for rollback
+        return True, original_states  # Success
     except Exception as error_message:
         logger.error(f"Failed to update case distribution collection: {error_message}")
-        return False, str(error_message), None  # Error and no original states
+        return False, str(error_message)  # Error
 
 def rollback_case_distribution_collection(case_collection, original_states):
     """
@@ -72,8 +71,10 @@ def rollback_case_distribution_collection(case_collection, original_states):
                 }
             )
         logger.info("Case distribution collection rolled back successfully.")
+        return True  # Success
     except Exception as error_message:
         logger.error(f"Failed to roll back case distribution collection: {error_message}")
+        return False, str(error_message)  # Error
 
 def update_summary_in_mongo(summary_collection, transaction_collection, updated_drcs, case_distribution_batch_id):
     """
@@ -128,10 +129,10 @@ def update_summary_in_mongo(summary_collection, transaction_collection, updated_
         )
 
         logger.info(f"Updated CRD_Distribution_Status to 'close' for Batch ID: {case_distribution_batch_id}")
-        return True, None, original_counts  # Success, no error, and original counts for rollback
+        return True, original_counts  # Success
     except Exception as error_message:
         logger.error(f"Failed to update summary in MongoDB: {error_message}")
-        return False, str(error_message), None  # Error and no original counts
+        return False, str(error_message)  # Error
 
 def rollback_summary_in_mongo(summary_collection, original_counts, case_distribution_batch_id):
     """
@@ -149,5 +150,7 @@ def rollback_summary_in_mongo(summary_collection, original_counts, case_distribu
                 {"$set": {"Count": original_count.get("Count", 0)}}
             )
         logger.info("Summary collection rolled back successfully.")
+        return True  # Success
     except Exception as error_message:
         logger.error(f"Failed to roll back summary in MongoDB: {error_message}")
+        return False, str(error_message)  # Error

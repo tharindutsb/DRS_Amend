@@ -1,4 +1,3 @@
-
 '''
 ####### py file is as follows:
 
@@ -22,7 +21,7 @@ logger = get_logger("amend_status_logger")
 def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
     """
     Balances resources between DRCs based on the given logic.
-    Returns: (updated_drcs, error)
+    Returns: (success, updated_drcs or error_message)
     """
     resource_tracker = defaultdict(lambda: defaultdict(list))
     for case_id, (drc, resource) in drcs.items():
@@ -32,24 +31,24 @@ def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
         # Step 1: Check if receiver_drc and donor_drc exist
         if receiver_drc not in resource_tracker or donor_drc not in resource_tracker:
             logger.error(f"One of the DRCs ({receiver_drc} or {donor_drc}) does not exist.")
-            return None, f"One of the DRCs ({receiver_drc} or {donor_drc}) does not exist."
+            return False, f"One of the DRCs ({receiver_drc} or {donor_drc}) does not exist."
 
         # Step 2: Check if rtom exists in both receiver_drc and donor_drc
         if rtom not in resource_tracker[receiver_drc] or rtom not in resource_tracker[donor_drc]:
             logger.error(f"The resource {rtom} does not exist in both {receiver_drc} and {donor_drc}.")
-            return None, f"The resource {rtom} does not exist in both {receiver_drc} and {donor_drc}."
+            return False, f"The resource {rtom} does not exist in both {receiver_drc} and {donor_drc}."
 
         # Step 3: Check if donor_drc can donate without going below 20% of its resources
         donor_resource_count = len(resource_tracker[donor_drc][rtom])
         if donor_resource_count > 0 and (donor_resource_count - transfer_value < 0.2 * donor_resource_count):
             logger.error(f"Insufficient resources in {donor_drc} for the Donate.")
-            return None, f"Insufficient resources in {donor_drc} for the Donate."
+            return False, f"Insufficient resources in {donor_drc} for the Donate."
 
         # Step 4: Check if receiver_drc can receive without going below 20% of its resources
         receiver_resource_count = len(resource_tracker[receiver_drc][rtom])
         if receiver_resource_count > 0 and (receiver_resource_count - transfer_value < 0.2 * receiver_resource_count):
             logger.error(f"Insufficient resources in {receiver_drc} for the Balance.")
-            return None, f"Insufficient resources in {receiver_drc} for the Balance."
+            return False, f"Insufficient resources in {receiver_drc} for the Balance."
 
         # Step 5: Perform the transfer
         for _ in range(transfer_value):
@@ -79,7 +78,7 @@ def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
                 for case_id in case_ids:
                     updated_drcs[case_id] = [drc, resource]
 
-        return updated_drcs, None  # Success
+        return True, updated_drcs  # Success
     except Exception as error_message:
         logger.error(f"Error balancing resources: {error_message}")
-        return None, str(error_message)  # Error
+        return False, str(error_message)  # Error

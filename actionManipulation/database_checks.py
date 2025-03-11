@@ -15,7 +15,7 @@ def update_task_status(system_task_collection, task_id, status):
             {"$set": {"task_status": status, "last_updated": datetime.now()}}
         )
         logger.info(f"Task ID {task_id} status updated to '{status}' successfully.")
-        return True, None  # Success
+        return True  # Success
     except Exception as error_message:
         logger.error(f"Failed to update task status for Task ID {task_id}: {error_message}")
         return False, str(error_message)  # Error
@@ -33,11 +33,11 @@ def fetch_and_validate_template_task(template_task_collection, template_task_id,
         })
         if not template_task:
             logger.error(f"No matching template task found for Template_Task_Id {template_task_id}.")
-            return None, f"No matching template task found for Template_Task_Id {template_task_id}."
-        return template_task, None  # Success
+            return False, f"No matching template task found for Template_Task_Id {template_task_id}."
+        return True, template_task  # Success
     except Exception as error_message:
         logger.error(f"Failed to fetch or validate template task: {error_message}")
-        return None, str(error_message)  # Error
+        return False, str(error_message)  # Error
 
 def fetch_transaction_details(transaction_collection, case_distribution_batch_id):
     """
@@ -53,7 +53,7 @@ def fetch_transaction_details(transaction_collection, case_distribution_batch_id
         })
         if not transaction_record:
             logger.error(f"No open transaction record found for Batch ID {case_distribution_batch_id}.")
-            return None, f"No open transaction record found for Batch ID {case_distribution_batch_id}."
+            return False, f"No open transaction record found for Batch ID {case_distribution_batch_id}."
 
         # Find the amend action in batch_seq_details
         amend_action = None
@@ -64,23 +64,23 @@ def fetch_transaction_details(transaction_collection, case_distribution_batch_id
 
         if not amend_action:
             logger.error(f"No open amend action found for Batch ID {case_distribution_batch_id}.")
-            return None, f"No open amend action found for Batch ID {case_distribution_batch_id}."
+            return False, f"No open amend action found for Batch ID {case_distribution_batch_id}."
 
         # Validate array_of_distributions
         array_of_distributions = amend_action.get("array_of_distributions", [])
         if not array_of_distributions:
             logger.error(f"No array_of_distributions found for amend action in Batch ID {case_distribution_batch_id}.")
-            return None, f"No array_of_distributions found for amend action in Batch ID {case_distribution_batch_id}."
+            return False, f"No array_of_distributions found for amend action in Batch ID {case_distribution_batch_id}."
 
         for distribution in array_of_distributions:
             if not all(key in distribution for key in ["rtom", "donor_drc_id", "receiver_drc_id", "transfer_count"]):
                 logger.error(f"Missing mandatory fields in array_of_distributions for Batch ID {case_distribution_batch_id}.")
-                return None, f"Missing mandatory fields in array_of_distributions for Batch ID {case_distribution_batch_id}."
+                return False, f"Missing mandatory fields in array_of_distributions for Batch ID {case_distribution_batch_id}."
 
-        return amend_action, None  # Success
+        return True, amend_action  # Success
     except Exception as error_message:
         logger.error(f"Failed to fetch or validate transaction details: {error_message}")
-        return None, str(error_message)  # Error
+        return False, str(error_message)  # Error
 
 def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
     """
@@ -91,7 +91,7 @@ def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
         logger.info(f"Fetching cases for Batch ID {case_distribution_batch_id}...")
         cases = list(case_collection.find({"Case_Distribution_Batch_ID": case_distribution_batch_id}))
         logger.info(f"Found {len(cases)} cases for Batch ID {case_distribution_batch_id}.")
-        return cases, None  # Success
+        return True, cases  # Success
     except Exception as error_message:
         logger.error(f"Failed to fetch cases for batch ID {case_distribution_batch_id}: {error_message}")
-        return None, str(error_message)  # Error
+        return False, str(error_message)  # Error
