@@ -1,34 +1,34 @@
-'''
-####### py file is as follows:
-
-    Purpose: This template is used for the DRC Amend.
-    Created Date: 2025-01-08
-    Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
-    Last Modified Date: 2024-01-19
-    Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
-    Version: Node.js v20.11.1
-    Dependencies: express
-    Related Files: Case_controller.js
-    Notes:
-'''
-
-
 from datetime import datetime
 from utils.loggers import get_logger
 
 logger = get_logger("amend_status_logger")
 
-def update_task_status(system_task_collection, task_id, status):
+def update_task_status(system_task_collection, task_id, status, error_description=None):
     """
     Updates the status of a task in the system_task collection.
+    Also updates status_changed_dtm and status_description (if provided).
     Returns: (success, error)
     """
     try:
         logger.info(f"Updating task status to '{status}' for Task ID {task_id}...")
+        
+        # Prepare the update fields
+        update_fields = {
+            "task_status": status,
+            "status_changed_dtm": datetime.now(),
+            "last_updated": datetime.now()
+        }
+        
+        # Add status_description if an error description is provided
+        if error_description:
+            update_fields["status_description"] = error_description
+        
+        # Update the task status and related fields
         system_task_collection.update_one(
             {"Task_Id": task_id},
-            {"$set": {"task_status": status, "last_updated": datetime.now()}}
+            {"$set": update_fields}
         )
+        
         logger.info(f"Task ID {task_id} status updated to '{status}' successfully.")
         return True, None
     except Exception as e:

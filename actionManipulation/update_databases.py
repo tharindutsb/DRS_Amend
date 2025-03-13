@@ -15,8 +15,53 @@ update database case distribution collection and summary collection update_datab
 from datetime import datetime
 from collections import defaultdict
 from utils.loggers import get_logger
+from utils.connectDB import get_collection
 
 logger = get_logger("amend_status_logger")
+
+def update_template_task_collection(template_task_id, case_distribution_batch_id):
+    """
+    Updates the Template_Task collection with the new TEMPLATE_TASK_ID and parameters for the "Case Amend Planning among DRC" type.
+    Returns: (success, error)
+    """
+    try:
+        template_task_collection = get_collection("Template_task")
+        
+        # Check if the template_task_id already exists in the collection for "Case Amend Planning among DRC"
+        existing_task = template_task_collection.find_one({
+            "Template_Task_Id": template_task_id,
+            "task_type": "Case Amend Planning among DRC"
+        })
+        
+        if not existing_task:
+            # Insert a new record if it doesn't exist
+            template_task_collection.insert_one({
+                "Template_Task_Id": template_task_id,
+                "task_type": "Case Amend Planning among DRC",
+                "parameters": {
+                    "Case_Distribution_Batch_ID": case_distribution_batch_id
+                },
+                "created_at": datetime.now(),
+                "last_updated": datetime.now()
+            })
+            logger.info(f"Template_Task_Id {template_task_id} added to the Template_task collection for 'Case Amend Planning among DRC'.")
+        else:
+            # Update the parameters if the record exists
+            template_task_collection.update_one(
+                {"Template_Task_Id": template_task_id, "task_type": "Case Amend Planning among DRC"},
+                {
+                    "$set": {
+                        "parameters.Case_Distribution_Batch_ID": case_distribution_batch_id,
+                        "last_updated": datetime.now()
+                    }
+                }
+            )
+            logger.info(f"Template_Task_Id {template_task_id} updated in the Template_task collection for 'Case Amend Planning among DRC'.")
+        
+        return True, None
+    except Exception as e:
+        logger.error(f"Failed to update Template_Task collection: {e}")
+        return False, str(e)
 
 def update_case_distribution_collection(case_collection, updated_drcs, existing_drcs):
     """
