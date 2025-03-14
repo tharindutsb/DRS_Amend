@@ -22,7 +22,7 @@ logger = get_logger("amend_status_logger")
 def update_template_task_collection(template_task_id, case_distribution_batch_id):
     """
     Updates the Template_Task collection with the new TEMPLATE_TASK_ID and parameters for the "Case Amend Planning among DRC" type.
-    Returns: (success, error)
+    Returns: (success, message or error)
     """
     try:
         template_task_collection = get_collection("Template_task")
@@ -41,8 +41,8 @@ def update_template_task_collection(template_task_id, case_distribution_batch_id
                 "parameters": {
                     "Case_Distribution_Batch_ID": case_distribution_batch_id
                 },
-                "created_at": datetime.now(),
-                "last_updated": datetime.now()
+                "created_dtm": datetime.now(),
+                "last_updated_dtm": datetime.now()
             })
             logger.info(f"Template_Task_Id {template_task_id} added to the Template_task collection for 'Case Amend Planning among DRC'.")
         else:
@@ -52,21 +52,21 @@ def update_template_task_collection(template_task_id, case_distribution_batch_id
                 {
                     "$set": {
                         "parameters.Case_Distribution_Batch_ID": case_distribution_batch_id,
-                        "last_updated": datetime.now()
+                        "last_updated_dtm": datetime.now()
                     }
                 }
             )
             logger.info(f"Template_Task_Id {template_task_id} updated in the Template_task collection for 'Case Amend Planning among DRC'.")
         
-        return True, None
-    except Exception as e:
-        logger.error(f"Failed to update Template_Task collection: {e}")
-        return False, str(e)
+        return True, "Template task collection updated successfully."
+    except Exception as update_error:
+        logger.error(f"Failed to update Template_Task collection: {update_error}")
+        return False, str(update_error)
 
 def update_case_distribution_collection(case_collection, updated_drcs, existing_drcs):
     """
     Updates the case distribution collection with the new DRC and resource values.
-    Returns: (success, error, original_states)
+    Returns: (success, message or error, original_states)
     """
     try:
         logger.info("Updating case distribution collection...")
@@ -93,13 +93,14 @@ def update_case_distribution_collection(case_collection, updated_drcs, existing_
                 logger.debug(f"Update result for Case_Id {case_id}: {result.matched_count} documents matched, {result.modified_count} documents modified.")
 
         return True, original_states  # Success
-    except Exception as error_message:
-        logger.error(f"Failed to update case distribution collection: {error_message}")
-        return False, str(error_message)  # Error
+    except Exception as update_error:
+        logger.error(f"Failed to update case distribution collection: {update_error}")
+        return False, str(update_error), {}  # Error
 
 def rollback_case_distribution_collection(case_collection, original_states):
     """
     Rolls back the case distribution collection to its original state.
+    Returns: (success, message or error)
     """
     try:
         logger.info("Rolling back case distribution collection...")
@@ -116,16 +117,16 @@ def rollback_case_distribution_collection(case_collection, original_states):
                 }
             )
         logger.info("Case distribution collection rolled back successfully.")
-        return True  # Success
-    except Exception as error_message:
-        logger.error(f"Failed to roll back case distribution collection: {error_message}")
-        return False, str(error_message)  # Error
+        return True, "Case distribution collection rolled back successfully."  # Success
+    except Exception as rollback_error:
+        logger.error(f"Failed to roll back case distribution collection: {rollback_error}")
+        return False, str(rollback_error)  # Error
 
 def update_summary_in_mongo(summary_collection, transaction_collection, updated_drcs, case_distribution_batch_id):
     """
     Updates the summary collection in MongoDB with the new counts after balancing.
     Also marks CRD_Distribution_Status and summery_status as 'close' once amendments are done.
-    Returns: (success, error, original_counts)
+    Returns: (success, message or error, original_counts)
     """
     try:
         logger.info("Updating summary in MongoDB...")
@@ -175,13 +176,14 @@ def update_summary_in_mongo(summary_collection, transaction_collection, updated_
 
         logger.info(f"Updated CRD_Distribution_Status to 'close' for Batch ID: {case_distribution_batch_id}")
         return True, original_counts  # Success
-    except Exception as error_message:
-        logger.error(f"Failed to update summary in MongoDB: {error_message}")
-        return False, str(error_message)  # Error
+    except Exception as update_error:
+        logger.error(f"Failed to update summary in MongoDB: {update_error}")
+        return False, str(update_error), {}  # Error
 
 def rollback_summary_in_mongo(summary_collection, original_counts, case_distribution_batch_id):
     """
     Rolls back the summary collection to its original state.
+    Returns: (success, message or error)
     """
     try:
         logger.info("Rolling back summary in MongoDB...")
@@ -195,7 +197,7 @@ def rollback_summary_in_mongo(summary_collection, original_counts, case_distribu
                 {"$set": {"Count": original_count.get("Count", 0)}}
             )
         logger.info("Summary collection rolled back successfully.")
-        return True  # Success
-    except Exception as error_message:
-        logger.error(f"Failed to roll back summary in MongoDB: {error_message}")
-        return False, str(error_message)  # Error
+        return True, "Summary collection rolled back successfully."  # Success
+    except Exception as rollback_error:
+        logger.error(f"Failed to roll back summary in MongoDB: {rollback_error}")
+        return False, str(rollback_error)  # Error

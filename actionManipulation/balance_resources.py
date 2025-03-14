@@ -79,6 +79,6 @@ def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
                     updated_drcs[case_id] = [drc, resource]
 
         return True, updated_drcs  # Success
-    except Exception as error_message:
-        logger.error(f"Error balancing resources: {error_message}")
-        return False, str(error_message)  # Error
+    except Exception as balance_error:
+        logger.error(f"Error balancing resources: {balance_error}")
+        return False, str(balance_error)  # Error

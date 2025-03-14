@@ -17,8 +17,7 @@ TEMPLATE_TASK = "Template_task"
 logger = get_logger("database_logger")
 
 def get_db_connection():
-    config_path = os.path.join(os.path.dirname(__file__), "../Config/DB_Config.ini")
-
+    config_path = "Config/DB_Config.ini"
     if not os.path.exists(config_path):
         logger.error(f"Configuration file '{config_path}' not found.")
         raise DatabaseConnectionError(f"Configuration file '{config_path}' not found.")
@@ -41,9 +40,9 @@ def get_db_connection():
         client = MongoClient(mongo_uri)
         db = client[db_name]
         return db
-    except Exception as e:
-        logger.error(f"Error connecting to MongoDB: {e}")
-        raise DatabaseConnectionError(f"Error connecting to MongoDB: {e}")
+    except Exception as db_connection_error:
+        logger.error(f"Error connecting to MongoDB: {db_connection_error}")
+        raise DatabaseConnectionError(f"Error connecting to MongoDB: {db_connection_error}")
 
 def get_collection(collection_name):
     """

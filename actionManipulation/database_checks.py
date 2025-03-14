@@ -31,9 +31,9 @@ def update_task_status(system_task_collection, task_id, status, error_descriptio
         
         logger.info(f"Task ID {task_id} status updated to '{status}' successfully.")
         return True, None
-    except Exception as e:
-        logger.error(f"Failed to update task status for Task ID {task_id}: {e}")
-        return False, str(e)
+    except Exception as update_error:
+        logger.error(f"Failed to update task status for Task ID {task_id}: {update_error}")
+        return False, str(update_error)
 
 def fetch_and_validate_template_task(template_task_collection, template_task_id, task_type):
     """
@@ -51,9 +51,9 @@ def fetch_and_validate_template_task(template_task_collection, template_task_id,
             logger.error(error_message)
             return False, error_message
         return True, template_task
-    except Exception as e:
-        logger.error(f"Failed to fetch or validate template task: {e}")
-        return False, str(e)
+    except Exception as fetch_error:
+        logger.error(f"Failed to fetch or validate template task: {fetch_error}")
+        return False, str(fetch_error)
 
 def fetch_transaction_details(transaction_collection, case_distribution_batch_id):
     """
@@ -98,9 +98,9 @@ def fetch_transaction_details(transaction_collection, case_distribution_batch_id
                 return False, error_message
 
         return True, amend_action
-    except Exception as e:
-        logger.error(f"Failed to fetch or validate transaction details: {e}")
-        return False, str(e)
+    except Exception as fetch_error:
+        logger.error(f"Failed to fetch or validate transaction details: {fetch_error}")
+        return False, str(fetch_error)
 
 def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
     """
@@ -112,6 +112,6 @@ def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
         cases = list(case_collection.find({"Case_Distribution_Batch_ID": case_distribution_batch_id}))
         logger.info(f"Found {len(cases)} cases for Batch ID {case_distribution_batch_id}.")
         return True, cases
-    except Exception as e:
-        logger.error(f"Failed to fetch cases for batch ID {case_distribution_batch_id}: {e}")
-        return False, str(e)
+    except Exception as fetch_error:
+        logger.error(f"Failed to fetch cases for batch ID {case_distribution_batch_id}: {fetch_error}")
+        return False, str(fetch_error)

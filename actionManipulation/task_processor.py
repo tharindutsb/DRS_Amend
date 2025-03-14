@@ -3,7 +3,7 @@ from actionManipulation.database_checks import update_task_status, fetch_and_val
 from actionManipulation.balance_resources import balance_resources
 from actionManipulation.update_databases import update_case_distribution_collection, update_summary_in_mongo, rollback_case_distribution_collection, rollback_summary_in_mongo, update_template_task_collection
 from utils.connectDB import get_collection
-from utils.read_template_task_id_ini import read_template_task_id_ini
+from utils.read_template_task_id_ini import get_template_task_id
 from datetime import datetime
 
 # Initialize logger
@@ -26,40 +26,40 @@ def check_template_task_in_system_tasks(template_task_id):
             logger.warning(f"Template_Task_Id {template_task_id} does not exist in the System_tasks collection.")
         
         return True, exists
-    except Exception as e:
-        logger.error(f"Failed to check System_tasks collection: {e}")
-        return False, str(e)
+    except Exception as db_check_error:
+        logger.error(f"Failed to check System_tasks collection: {db_check_error}")
+        return False, str(db_check_error)
 
 def validate_template_task_parameters(system_task, template_task):
     """
     Validates that the Template_Task_Id, task_type, and parameters match between the System_tasks and Template_Task collections.
-    Returns: (success, error)
+    Returns: (success, message or error)
     """
     try:
         if system_task["Template_Task_Id"] != template_task["Template_Task_Id"]:
-            error_message = f"Template_Task_Id mismatch: System_tasks has {system_task['Template_Task_Id']}, Template_Task has {template_task['Template_Task_Id']}."
-            logger.error(error_message)
-            return False, error_message
+            mismatch_template_task_id_error = f"Template_Task_Id mismatch: System_tasks has {system_task['Template_Task_Id']}, Template_Task has {template_task['Template_Task_Id']}."
+            logger.error(mismatch_template_task_id_error)
+            return False, mismatch_template_task_id_error
 
         if system_task["task_type"] != template_task["task_type"]:
-            error_message = f"Task type mismatch: System_tasks has {system_task['task_type']}, Template_Task has {template_task['task_type']}."
-            logger.error(error_message)
-            return False, error_message
+            mismatch_task_type_error = f"Task type mismatch: System_tasks has {system_task['task_type']}, Template_Task has {template_task['task_type']}."
+            logger.error(mismatch_task_type_error)
+            return False, mismatch_task_type_error
 
         # Check parameters (e.g., Case_Distribution_Batch_ID)
         system_task_batch_id = system_task["parameters"].get("Case_Distribution_Batch_ID", "")
         template_task_batch_id = template_task["parameters"].get("Case_Distribution_Batch_ID", "")
 
         if system_task_batch_id != template_task_batch_id:
-            error_message = f"Case_Distribution_Batch_ID mismatch: System_tasks has {system_task_batch_id}, Template_Task has {template_task_batch_id}."
-            logger.error(error_message)
-            return False, error_message
+            mismatch_batch_id_error = f"Case_Distribution_Batch_ID mismatch: System_tasks has {system_task_batch_id}, Template_Task has {template_task_batch_id}."
+            logger.error(mismatch_batch_id_error)
+            return False, mismatch_batch_id_error
 
         logger.info("Template_Task_Id, task_type, and parameters match between System_tasks and Template_Task collections.")
-        return True, None
-    except Exception as e:
-        logger.error(f"Failed to validate template task parameters: {e}")
-        return False, str(e)
+        return True, "Parameters validated successfully."
+    except Exception as validation_error:
+        logger.error(f"Failed to validate template task parameters: {validation_error}")
+        return False, str(validation_error)
 
 def process_single_batch(task):
     """
@@ -158,10 +158,7 @@ def amend_task_processing():
 
     try:
         # Step 1: Read the TEMPLATE_TASK_ID from the INI file
-        ini_file_path = "config/Set_Template_TaskID.ini"
-        success_read_ini, template_task_id = read_template_task_id_ini(ini_file_path)
-        if not success_read_ini:
-            raise Exception(template_task_id)
+        template_task_id = get_template_task_id()
 
         # Step 2: Update the Template_Task collection with the new TEMPLATE_TASK_ID and parameters
         system_task_collection = get_collection("System_tasks")
@@ -171,7 +168,7 @@ def amend_task_processing():
         }))
 
         if not open_tasks:
-            logger.warning("No open tasks found for Template_Task_Id {template_task_id}. Skipping resource balancing.")
+            logger.warning(f"No open tasks found for Template_Task_Id {template_task_id}. Skipping resource balancing.")
             return
 
         for task in open_tasks:
@@ -200,7 +197,7 @@ def amend_task_processing():
             # Step 5: Process the task
             process_single_batch(task)
 
-    except Exception as error_message:
-        logger.error(f"An unexpected error occurred: {error_message}")
+    except Exception as processing_error:
+        logger.error(f"An unexpected error occurred during task processing: {processing_error}")
         
     logger.info("Task processing completed.")

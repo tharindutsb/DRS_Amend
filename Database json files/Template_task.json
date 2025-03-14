@@ -4,13 +4,26 @@
       "parameters": {
         "Case_Distribution_Batch_ID": "Batch_005"
       },
-      "Template_Task_Id": 26
+      "Template_Task_Id": 26,
+      "created_dtm": {
+        "$date": "2025-02-17T09:27:28.371Z"
+      },
+      "last_updated_dtm": {
+        "$date": "2025-02-17T09:27:28.371Z"
+      }
     },
     {
       "task_type": "Case Distribution Planning among DRC",
       "parameters": {
         "Case_Distribution_Batch_ID": "Batch_005"
       },
-      "Template_Task_Id": 3
+      "Template_Task_Id": 3,
+      "created_dtm": {
+        "$date": "2025-02-17T09:27:28.371Z"
+      },
+      "last_updated_dtm": {
+        "$date": "2025-02-17T09:27:28.371Z"
+      }
     }
   ]
+
