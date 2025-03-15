@@ -10,7 +10,7 @@ def get_filePath(key):
     config = configparser.ConfigParser()
 
     # Load the .ini file (relative path)
-    config_file_path = '../Config/filePaths.ini'
+    config_file_path = 'config/filePaths.ini'
     config.read(config_file_path)
 
     # Determine the operating system

@@ -17,7 +17,7 @@ TEMPLATE_TASK = "Template_task"
 logger = get_logger("database_logger")
 
 def get_db_connection():
-    config_path = "Config/DB_Config.ini"
+    config_path = "config/DB_Config.ini"
     if not os.path.exists(config_path):
         logger.error(f"Configuration file '{config_path}' not found.")
         raise DatabaseConnectionError(f"Configuration file '{config_path}' not found.")
