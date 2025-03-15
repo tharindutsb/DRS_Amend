@@ -17,10 +17,11 @@ from collections import defaultdict
 from utils.loggers import get_logger
 from utils.connectDB import get_collection
 from utils.Custom_Exceptions import DatabaseUpdateError
+from utils.read_template_task_id_ini import get_template_task_id
 
 logger = get_logger("amend_status_logger")
 
-def update_template_task_collection(template_task_id, case_distribution_batch_id):
+def update_template_task_collection(case_distribution_batch_id):
     """
     Updates the Template_Task collection with the new TEMPLATE_TASK_ID and parameters for the "Case Amend Planning among DRC" type.
     Returns: (success, message or error)
@@ -28,28 +29,41 @@ def update_template_task_collection(template_task_id, case_distribution_batch_id
     try:
         template_task_collection = get_collection("Template_task")
         
-        # Check if the template_task_id already exists in the collection for "Case Amend Planning among DRC"
-        existing_task = template_task_collection.find_one({
-            "Template_Task_Id": template_task_id,
+        # Read the TEMPLATE_TASK_ID from the INI file
+        ini_template_task_id = get_template_task_id()
+        
+        # Check if the task type "Case Amend Planning among DRC" exists in the collection
+        existing_template_task = template_task_collection.find_one({
             "task_type": "Case Amend Planning among DRC"
         })
         
-        if not existing_task:
-            # Insert a new record if it doesn't exist
-            template_task_collection.insert_one({
-                "Template_Task_Id": template_task_id,
-                "task_type": "Case Amend Planning among DRC",
-                "parameters": {
-                    "Case_Distribution_Batch_ID": case_distribution_batch_id
-                },
-                "created_dtm": datetime.now(),
-                "last_updated_dtm": datetime.now()
-            })
-            logger.info(f"Template_Task_Id {template_task_id} added to the Template_task collection for 'Case Amend Planning among DRC'.")
+        if not existing_template_task:
+            error_message = f"No template task found for 'Case Amend Planning among DRC'."
+            logger.error(error_message)
+            return False, error_message
+        
+        # Check if the existing Template_Task_Id matches the one from the INI file
+        if existing_template_task["Template_Task_Id"] != ini_template_task_id:
+            # Update the existing Template_Task_Id with the one from the INI file
+            result = template_task_collection.update_one(
+                {"task_type": "Case Amend Planning among DRC"},
+                {
+                    "$set": {
+                        "Template_Task_Id": ini_template_task_id,
+                        "parameters.Case_Distribution_Batch_ID": case_distribution_batch_id,
+                        "last_updated_dtm": datetime.now()
+                    }
+                }
+            )
+            if result.modified_count == 0:
+                error_message = f"Failed to update Template_Task_Id to {ini_template_task_id} in the Template_task collection for 'Case Amend Planning among DRC'."
+                logger.error(error_message)
+                return False, error_message
+            logger.info(f"Template_Task_Id updated to {ini_template_task_id} in the Template_task collection for 'Case Amend Planning among DRC'.")
         else:
-            # Update the parameters if the record exists
-            template_task_collection.update_one(
-                {"Template_Task_Id": template_task_id, "task_type": "Case Amend Planning among DRC"},
+            # Update the parameters if the Template_Task_Id matches
+            result = template_task_collection.update_one(
+                {"task_type": "Case Amend Planning among DRC"},
                 {
                     "$set": {
                         "parameters.Case_Distribution_Batch_ID": case_distribution_batch_id,
@@ -57,12 +71,16 @@ def update_template_task_collection(template_task_id, case_distribution_batch_id
                     }
                 }
             )
-            logger.info(f"Template_Task_Id {template_task_id} updated in the Template_task collection for 'Case Amend Planning among DRC'.")
+            if result.modified_count == 0:
+                error_message = f"Failed to update parameters for Template_Task_Id {ini_template_task_id} in the Template_task collection for 'Case Amend Planning among DRC'."
+                logger.error(error_message)
+                return False, error_message
+            logger.info(f"Parameters updated for Template_Task_Id {ini_template_task_id} in the Template_task collection for 'Case Amend Planning among DRC'.")
         
         return True, "Template task collection updated successfully."
     except Exception as update_error:
         logger.error(f"Failed to update Template_Task collection: {update_error}")
-        raise DatabaseUpdateError(f"Failed to update Template_Task collection: {update_error}")
+        return False, str(update_error)
 
 def update_case_distribution_collection(case_collection, updated_drcs, existing_drcs):
     """

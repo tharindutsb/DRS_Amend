@@ -174,7 +174,7 @@ def amend_task_processing():
 
         for task in open_tasks:
             case_distribution_batch_id = task["parameters"].get("Case_Distribution_Batch_ID", "")
-            success_update_template_task, error = update_template_task_collection(template_task_id, case_distribution_batch_id)
+            success_update_template_task, error = update_template_task_collection(case_distribution_batch_id)
             if not success_update_template_task:
                 raise TaskProcessingException(error)
 
