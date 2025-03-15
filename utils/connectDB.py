@@ -1,4 +1,15 @@
-# connectDB.py
+'''
+connectDB.py file is as follows:
+
+    Purpose: This script handles database connections and collection initialization.
+    Created Date: 2025-01-08
+    Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
+    Last Modified Date: 2024-01-19
+    Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
+    Version: Python 3.9
+    Dependencies: configparser, pymongo, os, utils.loggers, utils.Custom_Exceptions
+    Notes:
+'''
 
 import configparser
 from pymongo import MongoClient
@@ -7,16 +18,18 @@ from utils.loggers import get_logger
 from utils.Custom_Exceptions import DatabaseConnectionError
 
 # Collection names
-CASE_COLLECTION = "DRS.Tmp_Case_Distribution_DRC"
-TRANSACTION_COLLECTION = "Case_distribution_drc_transactions"
-CASE_DRC_SUMMARY = "DRS_Database.Case_Distribution_DRC_Summary"
-SYSTEM_TASKS = "System_tasks"
-TEMPLATE_TASK = "Template_task"
+CASE_COLLECTION = "DRS.Tmp_Case_Distribution_DRC"   # Temporary collection for case distribution
+TRANSACTION_COLLECTION = "Case_distribution_drc_transactions"  # Collection for transactions related to Amend distribution
+CASE_DRC_SUMMARY = "DRS_Database.Case_Distribution_DRC_Summary" # Collection for case distribution summary after amendment
+SYSTEM_TASKS = "System_tasks"  # Collection for system tasks
+TEMPLATE_TASK = "Template_task" # Collection for template task 
 
 # Initialize logger
 logger = get_logger("database_logger")
 
+# Read configuration from DB_Config.ini file
 def get_db_connection():
+
     config_path = "config/DB_Config.ini"
     if not os.path.exists(config_path):
         logger.error(f"Configuration file '{config_path}' not found.")
@@ -44,6 +57,7 @@ def get_db_connection():
         logger.error(f"Error connecting to MongoDB: {db_connection_error}")
         raise DatabaseConnectionError(f"Error connecting to MongoDB: {db_connection_error}")
 
+# Get a specific collection
 def get_collection(collection_name):
     """
     Returns a specific collection after establishing a DB connection.
