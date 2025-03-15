@@ -1,11 +1,2 @@
-pika
 pymongo
-pandas
-numpy
-openpyxl
-requests
-fastapi
-uvicorn
-motor
-pydantic
 configparser

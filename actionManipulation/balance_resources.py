@@ -1,15 +1,20 @@
 '''
-####### py file is as follows:
+balance_resources.py file is as follows:
 
-    Purpose: This template is used for the DRC Amend.
+    Purpose: This script balances resources between DRCs based on the given logic.
     Created Date: 2025-01-08
     Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
     Last Modified Date: 2024-01-19
     Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
-    Version: Node.js v20.11.1
-    Dependencies: express
-    Related Files: Case_controller.js
-    Notes:
+    Version: Python 3.9
+    Dependencies: collections, utils.loggers, utils.Custom_Exceptions
+    Notes: 
+        - The script first checks if the receiver and donor DRCs exist.
+        - It then verifies if the resource (rtom) exists in both DRCs.
+        - The donor DRC's resources are checked to ensure they do not fall below 20% after the transfer.
+        - Similarly, the receiver DRC's resources are checked to ensure they do not fall below 20% after the transfer.
+        - The transfer is performed by moving the specified number of cases from the donor to the receiver.
+        - A round-robin method is used to balance back the resources, excluding the rtom.
 '''
 
 # balance_resources.py

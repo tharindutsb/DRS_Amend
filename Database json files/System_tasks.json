@@ -3,7 +3,7 @@
   "Template_Task_Id": 26,
   "task_type": "Case Amend Planning among DRC",
   "parameters": {
-    "Case_Distribution_Batch_ID" :"Batch_005"
+    "Case_Distribution_Batch_ID" :"005"
   },
   "Created_By": "Sys",
   "Execute_By": "SYS",

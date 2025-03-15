@@ -1,14 +1,13 @@
 '''
-update database case distribution collection and summary collection update_database.py file is as follows:
+update_databases.py file is as follows:
 
-    Purpose: This template is used for the DRC Amend.
+    Purpose: This script updates the case distribution collection and summary collection in the database.
     Created Date: 2025-01-08
     Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
     Last Modified Date: 2024-01-19
     Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
-    Version: Node.js v20.11.1
-    Dependencies: express
-    Related Files: Case_controller.js
+    Version: Python 3.9
+    Dependencies: datetime, collections, utils.loggers, utils.connectDB, utils.Custom_Exceptions, utils.read_template_task_id_ini
     Notes:
 '''
 # update_databases.py

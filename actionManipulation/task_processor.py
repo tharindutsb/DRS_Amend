@@ -1,10 +1,22 @@
+'''
+task_processor.py file is as follows:
+
+    Purpose: This script processes tasks related to DRC Amend.
+    Created Date: 2025-01-08
+    Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
+    Last Modified Date: 2024-01-19
+    Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
+    Version: Python 3.9
+    Dependencies: utils.loggers, actionManipulation.database_checks, actionManipulation.balance_resources, actionManipulation.update_databases, utils.connectDB, utils.read_template_task_id_ini, datetime, utils.Custom_Exceptions
+    Notes:
+'''
+
 from utils.loggers import get_logger
 from actionManipulation.database_checks import update_task_status, fetch_and_validate_template_task, fetch_transaction_details, fetch_cases_for_batch
 from actionManipulation.balance_resources import balance_resources
 from actionManipulation.update_databases import update_case_distribution_collection, update_summary_in_mongo, rollback_case_distribution_collection, rollback_summary_in_mongo, update_template_task_collection
 from utils.connectDB import get_collection
 from utils.read_template_task_id_ini import get_template_task_id
-from datetime import datetime
 from utils.Custom_Exceptions import TaskProcessingException
 
 # Initialize logger
@@ -74,7 +86,7 @@ def process_single_batch(task):
     try:
         # Step 1: Update task status to "processing"
         system_task_collection = get_collection("System_tasks")
-        success_update_task_status, error = update_task_status(system_task_collection, task_id, "processing")
+        success_update_task_status, error = update_task_status(system_task_collection, task_id, "processing", "Task is being processed")
         if not success_update_task_status:
             raise TaskProcessingException(error)
 
@@ -138,7 +150,7 @@ def process_single_batch(task):
                 raise TaskProcessingException(original_counts)
 
         # Step 10: Update task status to "completed"
-        success_update_task_status_completed, error = update_task_status(system_task_collection, task_id, "completed")
+        success_update_task_status_completed, error = update_task_status(system_task_collection, task_id, "completed", "Task completed successfully")
         if not success_update_task_status_completed:
             # Rollback both case distribution and summary collections if task status update fails
             rollback_case_distribution_collection(case_collection, original_states)

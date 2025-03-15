@@ -1,3 +1,16 @@
+'''
+database_update.py file is as follows:
+
+    Purpose: This script resets and imports data into MongoDB collections from JSON files.
+    Created Date: 2025-01-08
+    Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
+    Last Modified Date: 2024-01-19
+    Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
+    Version: Python 3.9
+    Dependencies: pymongo, json, os, bson
+    Notes:
+'''
+
 import pymongo
 import json
 import os

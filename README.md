@@ -17,6 +17,7 @@ This system automates the process of balancing resources (cases) between **DRCs 
 7. [Logging](#logging)
 8. [Contributing](#contributing)
 9. [License](#license)
+10. [Created_BY](#created_by)
 
 ---
 
@@ -49,7 +50,6 @@ The system is divided into the following modules:
 ### `connectDB.py`
 - Handles database connections and collection initialization.
 - Functions:
-  - `get_db_connection()`: Establishes a connection to MongoDB.
   - `get_collection(collection_name)`: Returns a specific collection from the database.
 
 ### `balance_resources.py`
@@ -60,22 +60,33 @@ The system is divided into the following modules:
 ### `database_checks.py`
 - Handles database queries and validations.
 - Functions:
-  - `update_task_status()`: Updates the status of a task in the `System_tasks` collection.
-  - `fetch_and_validate_template_task()`: Fetches and validates a template task.
-  - `fetch_transaction_details()`: Fetches transaction details for a batch ID.
-  - `fetch_cases_for_batch()`: Fetches cases for a batch ID.
+  - `update_task_status(system_task_collection, task_id, status, error_description=None)`: Updates the status of a task in the `System_tasks` collection.
+  - `fetch_and_validate_template_task(template_task_collection, template_task_id, task_type)`: Fetches and validates a template task.
+  - `fetch_transaction_details(transaction_collection, case_distribution_batch_id)`: Fetches transaction details for a batch ID.
+  - `fetch_cases_for_batch(case_collection, case_distribution_batch_id)`: Fetches cases for a batch ID.
 
 ### `update_databases.py`
 - Updates the database after resource balancing.
 - Functions:
-  - `update_case_distribution_collection()`: Updates the case distribution collection with new DRC values.
-  - `update_summary_in_mongo()`: Updates the summary collection and marks the transaction as closed.
+  - `update_template_task_collection(case_distribution_batch_id)`: Updates the Template_Task collection with the new TEMPLATE_TASK_ID and parameters.
+  - `update_case_distribution_collection(case_collection, updated_drcs, existing_drcs)`: Updates the case distribution collection with new DRC values.
+  - `rollback_case_distribution_collection(case_collection, original_states)`: Rolls back the case distribution collection to its original state.
+  - `update_summary_in_mongo(summary_collection, transaction_collection, updated_drcs, case_distribution_batch_id)`: Updates the summary collection and marks the transaction as closed.
+  - `rollback_summary_in_mongo(summary_collection, original_counts, case_distribution_batch_id)`: Rolls back the summary collection to its original state.
 
 ### `task_processor.py`
 - Processes tasks sequentially.
 - Functions:
-  - `process_single_batch()`: Processes a single batch task.
+  - `check_template_task_in_system_tasks(template_task_id)`: Checks if the TEMPLATE_TASK_ID exists in the System_tasks collection.
+  - `validate_template_task_parameters(system_task, template_task)`: Validates that the Template_Task_Id, task_type, and parameters match between the System_tasks and Template_Task collections.
+  - `process_single_batch(task)`: Processes a single batch task.
   - `amend_task_processing()`: Fetches and processes open tasks.
+
+### `read_template_task_id_ini.py`
+- Reads the TEMPLATE_TASK_ID from an INI file.
+- Functions:
+  - `read_template_task_id_ini()`: Reads the TEMPLATE_TASK_ID from the INI file.
+  - `get_template_task_id()`: Gets the TEMPLATE_TASK_ID from the INI file and handles errors.
 
 ### `main.py`
 - Entry point of the application.
@@ -92,3 +103,48 @@ The system is divided into the following modules:
 2. **Install Dependencies**:
    ```bash
    pip install pymongo configparser
+   ```
+
+3. **Configuration**:
+   - Ensure the MongoDB connection details are correctly set in the `connectDB.py` file.
+   - Update the `config/Set_Template_TaskID.ini` file with the correct `TEMPLATE_TASK_ID`.
+
+---
+
+## Usage
+1. **Run the main script**:
+   ```bash
+   python main.py
+   ```
+
+2. **Monitor the logs**:
+   - Logs are generated in the `logs` directory.
+   - Check the logs for any errors or status updates.
+
+---
+
+## Error Handling
+- The system includes custom exceptions to handle various error scenarios.
+- Errors are logged using the `utils.loggers` module.
+- In case of errors, the system attempts to rollback changes to maintain data consistency.
+
+---
+
+## Logging
+- The system uses a custom logging module (`utils.loggers`) to log information, warnings, and errors.
+- Logs are stored in the `logs` directory with timestamps.
+
+---
+
+## Contributing
+- Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+
+---
+
+## License
+- This project is licensed under the SLT.
+
+## Created By
+- T.S.Balasooriya : (tharindutsb@gmail.com) 
+- A.A.P.Bathiya : (pasanbathiya246@gmail.com)
+- Amupama Maheepala : (anupamamaheepala999@gmail.com)
