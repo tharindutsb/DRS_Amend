@@ -19,3 +19,11 @@ class ResourceBalanceError(TaskProcessingError):
 class DatabaseUpdateError(TaskProcessingError):
     """Raised when there is an issue updating the database."""
     pass
+
+class INIFileReadError(TaskProcessingError):
+    """Raised when there is an issue reading the INI file."""
+    pass
+
+class TaskProcessingException(TaskProcessingError):
+    """Raised when there is a general task processing error."""
+    pass

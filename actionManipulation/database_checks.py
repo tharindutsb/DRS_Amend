@@ -1,5 +1,6 @@
 from datetime import datetime
 from utils.loggers import get_logger
+from utils.Custom_Exceptions import TaskValidationError
 
 logger = get_logger("amend_status_logger")
 
@@ -33,7 +34,7 @@ def update_task_status(system_task_collection, task_id, status, error_descriptio
         return True, None
     except Exception as update_error:
         logger.error(f"Failed to update task status for Task ID {task_id}: {update_error}")
-        return False, str(update_error)
+        raise TaskValidationError(f"Failed to update task status for Task ID {task_id}: {update_error}")
 
 def fetch_and_validate_template_task(template_task_collection, template_task_id, task_type):
     """
@@ -53,7 +54,7 @@ def fetch_and_validate_template_task(template_task_collection, template_task_id,
         return True, template_task
     except Exception as fetch_error:
         logger.error(f"Failed to fetch or validate template task: {fetch_error}")
-        return False, str(fetch_error)
+        raise TaskValidationError(f"Failed to fetch or validate template task: {fetch_error}")
 
 def fetch_transaction_details(transaction_collection, case_distribution_batch_id):
     """
@@ -100,7 +101,7 @@ def fetch_transaction_details(transaction_collection, case_distribution_batch_id
         return True, amend_action
     except Exception as fetch_error:
         logger.error(f"Failed to fetch or validate transaction details: {fetch_error}")
-        return False, str(fetch_error)
+        raise TaskValidationError(f"Failed to fetch or validate transaction details: {fetch_error}")
 
 def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
     """
@@ -114,4 +115,4 @@ def fetch_cases_for_batch(case_collection, case_distribution_batch_id):
         return True, cases
     except Exception as fetch_error:
         logger.error(f"Failed to fetch cases for batch ID {case_distribution_batch_id}: {fetch_error}")
-        return False, str(fetch_error)
+        raise TaskValidationError(f"Failed to fetch cases for batch ID {case_distribution_batch_id}: {fetch_error}")

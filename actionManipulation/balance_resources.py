@@ -15,6 +15,7 @@
 # balance_resources.py
 from collections import defaultdict
 from utils.loggers import get_logger
+from utils.Custom_Exceptions import ResourceBalanceError
 
 logger = get_logger("amend_status_logger")
 
@@ -81,4 +82,4 @@ def balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
         return True, updated_drcs  # Success
     except Exception as balance_error:
         logger.error(f"Error balancing resources: {balance_error}")
-        return False, str(balance_error)  # Error
+        raise ResourceBalanceError(f"Error balancing resources: {balance_error}")

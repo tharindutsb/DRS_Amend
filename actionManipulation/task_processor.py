@@ -5,6 +5,7 @@ from actionManipulation.update_databases import update_case_distribution_collect
 from utils.connectDB import get_collection
 from utils.read_template_task_id_ini import get_template_task_id
 from datetime import datetime
+from utils.Custom_Exceptions import TaskProcessingException
 
 # Initialize logger
 logger = get_logger("amend_status_logger")
@@ -75,30 +76,30 @@ def process_single_batch(task):
         system_task_collection = get_collection("System_tasks")
         success_update_task_status, error = update_task_status(system_task_collection, task_id, "processing")
         if not success_update_task_status:
-            raise Exception(error)
+            raise TaskProcessingException(error)
 
         # Step 2: Fetch and validate template task
         template_task_collection = get_collection("Template_task")
         success_fetch_template_task, template_task = fetch_and_validate_template_task(template_task_collection, template_task_id, task_type)
         if not success_fetch_template_task:
-            raise Exception(template_task)
+            raise TaskProcessingException(template_task)
 
         # Step 3: Validate that the Template_Task_Id, task_type, and parameters match between System_tasks and Template_Task collections
         success_validate_parameters, error = validate_template_task_parameters(task, template_task)
         if not success_validate_parameters:
-            raise Exception(error)
+            raise TaskProcessingException(error)
 
         # Step 4: Fetch transaction details
         transaction_collection = get_collection("Case_distribution_drc_transactions")
         success_fetch_transaction_details, amend_details = fetch_transaction_details(transaction_collection, case_distribution_batch_id)
         if not success_fetch_transaction_details:
-            raise Exception(amend_details)
+            raise TaskProcessingException(amend_details)
 
         # Step 5: Fetch cases for the batch
         case_collection = get_collection("DRS.Tmp_Case_Distribution_DRC")
         success_fetch_cases_for_batch, cases = fetch_cases_for_batch(case_collection, case_distribution_batch_id)
         if not success_fetch_cases_for_batch:
-            raise Exception(cases)
+            raise TaskProcessingException(cases)
 
         # Convert cases to a dictionary format for balancing logic
         drcs = {} 
@@ -121,12 +122,12 @@ def process_single_batch(task):
             # Step 7: Run the balancing logic
             success_balance_resources, updated_drcs = balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value)
             if not success_balance_resources:
-                raise Exception(updated_drcs)
+                raise TaskProcessingException(updated_drcs)
 
             # Step 8: Update case distribution collection
             success_update_case_distribution, original_states = update_case_distribution_collection(case_collection, updated_drcs, existing_drcs)
             if not success_update_case_distribution:
-                raise Exception(original_states)
+                raise TaskProcessingException(original_states)
 
             # Step 9: Update summary in MongoDB
             summary_collection = get_collection("DRS_Database.Case_Distribution_DRC_Summary")
@@ -134,7 +135,7 @@ def process_single_batch(task):
             if not success_update_summary:
                 # Rollback case distribution collection if summary update fails
                 rollback_case_distribution_collection(case_collection, original_states)
-                raise Exception(original_counts)
+                raise TaskProcessingException(original_counts)
 
         # Step 10: Update task status to "completed"
         success_update_task_status_completed, error = update_task_status(system_task_collection, task_id, "completed")
@@ -142,10 +143,10 @@ def process_single_batch(task):
             # Rollback both case distribution and summary collections if task status update fails
             rollback_case_distribution_collection(case_collection, original_states)
             rollback_summary_in_mongo(summary_collection, original_counts, case_distribution_batch_id)
-            raise Exception(error)
+            raise TaskProcessingException(error)
         logger.info(f"Task ID {task_id} completed successfully.")
 
-    except Exception as error_message:
+    except TaskProcessingException as error_message:
         logger.error(f"Error in Task ID {task_id}: {error_message}")
         # Update task status to "error" and add error description
         update_task_status(system_task_collection, task_id, "error", str(error_message))
@@ -175,7 +176,7 @@ def amend_task_processing():
             case_distribution_batch_id = task["parameters"].get("Case_Distribution_Batch_ID", "")
             success_update_template_task, error = update_template_task_collection(template_task_id, case_distribution_batch_id)
             if not success_update_template_task:
-                raise Exception(error)
+                raise TaskProcessingException(error)
 
             # Step 3: Fetch the Template_Task record for validation
             template_task_collection = get_collection("Template_task")
@@ -187,17 +188,17 @@ def amend_task_processing():
             if not template_task:
                 error_message = f"No matching template task found for Template_Task_Id {template_task_id} and task_type 'Case Amend Planning among DRC'."
                 logger.error(error_message)
-                raise Exception(error_message)
+                raise TaskProcessingException(error_message)
 
             # Step 4: Validate Template_Task_Id, task_type, and parameters
             success_validate_parameters, error = validate_template_task_parameters(task, template_task)
             if not success_validate_parameters:
-                raise Exception(error)
+                raise TaskProcessingException(error)
 
             # Step 5: Process the task
             process_single_batch(task)
 
-    except Exception as processing_error:
+    except TaskProcessingException as processing_error:
         logger.error(f"An unexpected error occurred during task processing: {processing_error}")
         
     logger.info("Task processing completed.")

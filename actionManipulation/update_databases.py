@@ -16,6 +16,7 @@ from datetime import datetime
 from collections import defaultdict
 from utils.loggers import get_logger
 from utils.connectDB import get_collection
+from utils.Custom_Exceptions import DatabaseUpdateError
 
 logger = get_logger("amend_status_logger")
 
@@ -61,7 +62,7 @@ def update_template_task_collection(template_task_id, case_distribution_batch_id
         return True, "Template task collection updated successfully."
     except Exception as update_error:
         logger.error(f"Failed to update Template_Task collection: {update_error}")
-        return False, str(update_error)
+        raise DatabaseUpdateError(f"Failed to update Template_Task collection: {update_error}")
 
 def update_case_distribution_collection(case_collection, updated_drcs, existing_drcs):
     """
@@ -95,7 +96,7 @@ def update_case_distribution_collection(case_collection, updated_drcs, existing_
         return True, original_states  # Success
     except Exception as update_error:
         logger.error(f"Failed to update case distribution collection: {update_error}")
-        return False, str(update_error), {}  # Error
+        raise DatabaseUpdateError(f"Failed to update case distribution collection: {update_error}")
 
 def rollback_case_distribution_collection(case_collection, original_states):
     """
@@ -120,7 +121,7 @@ def rollback_case_distribution_collection(case_collection, original_states):
         return True, "Case distribution collection rolled back successfully."  # Success
     except Exception as rollback_error:
         logger.error(f"Failed to roll back case distribution collection: {rollback_error}")
-        return False, str(rollback_error)  # Error
+        raise DatabaseUpdateError(f"Failed to roll back case distribution collection: {rollback_error}")
 
 def update_summary_in_mongo(summary_collection, transaction_collection, updated_drcs, case_distribution_batch_id):
     """
@@ -178,7 +179,7 @@ def update_summary_in_mongo(summary_collection, transaction_collection, updated_
         return True, original_counts  # Success
     except Exception as update_error:
         logger.error(f"Failed to update summary in MongoDB: {update_error}")
-        return False, str(update_error), {}  # Error
+        raise DatabaseUpdateError(f"Failed to update summary in MongoDB: {update_error}")
 
 def rollback_summary_in_mongo(summary_collection, original_counts, case_distribution_batch_id):
     """
@@ -200,4 +201,4 @@ def rollback_summary_in_mongo(summary_collection, original_counts, case_distribu
         return True, "Summary collection rolled back successfully."  # Success
     except Exception as rollback_error:
         logger.error(f"Failed to roll back summary in MongoDB: {rollback_error}")
-        return False, str(rollback_error)  # Error
+        raise DatabaseUpdateError(f"Failed to roll back summary in MongoDB: {rollback_error}")

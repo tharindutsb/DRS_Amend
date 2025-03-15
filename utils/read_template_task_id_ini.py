@@ -1,5 +1,6 @@
 import configparser
 from utils.loggers import get_logger
+from utils.Custom_Exceptions import INIFileReadError
 
 logger = get_logger("amend_status_logger")
 
@@ -23,7 +24,7 @@ def read_template_task_id_ini():
             return False, error_message
     except Exception as ini_read_error:
         logger.error(f"Failed to read INI file {file_path}: {ini_read_error}")
-        return False, str(ini_read_error)
+        raise INIFileReadError(f"Failed to read INI file {file_path}: {ini_read_error}")
 
 def get_template_task_id():
     """
@@ -32,5 +33,5 @@ def get_template_task_id():
     """
     success_read_ini, template_task_id = read_template_task_id_ini()
     if not success_read_ini:
-        raise Exception(template_task_id)
+        raise INIFileReadError(template_task_id)
     return template_task_id
