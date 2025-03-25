@@ -21,7 +21,7 @@ def get_project_root():
     Returns the project root directory dynamically.
     Assumes this script is inside the project directory.
     """
-    return Path(__file__).resolve().parent.parent.parent  # Adjust depth if needed
+    return Path(__file__).resolve().parent.parent  # Adjusted depth to match the actual project structure
 
 
 def get_filePath(key):
@@ -37,7 +37,7 @@ def get_filePath(key):
         project_root = get_project_root()
 
         # Construct the config file path
-        config_file_path = project_root / "Config" / "filePaths.ini"
+        config_file_path = project_root / "config" / "filePaths.ini"  # Ensure the path matches the actual directory structure
 
         if not config_file_path.is_file():
             raise FileNotFoundError(f"Configuration file '{config_file_path}' not found.")
@@ -65,23 +65,25 @@ def get_filePath(key):
 
         # Retrieve the path
         if section in config:
-            requested_key = f"{os_suffix}_{key}"
+            requested_key = f"{os_suffix}_CONFIG"  # Corrected key suffix to match the INI file structure
             path = config[section].get(requested_key, "").strip()
 
             if not path:
-                raise KeyError(f"Key '{requested_key}' not found in section '{section}'.")
+                logger.error(f"Key '{requested_key}' not found in section '{section}'.")
+                return False  # Return False if the key is missing
 
             return Path(path)  # Return as Path object for consistency
 
         else:
-            raise KeyError(f"Section '{section}' is missing in the configuration file.")
+            logger.error(f"Section '{section}' is missing in the configuration file.")
+            return False  # Return False if the section is missing
 
     except FileNotFoundError as fnf_error:
         logger.error(f"Error: {fnf_error}")
-        return False
+        return False  
     except KeyError as key_error:
         logger.error(f"Error: {key_error}")
-        return False
+        return False  
     except Exception as e:
         logger.error(f"Error: Unexpected error occurred - {e}")
-        return False
+        return False 
