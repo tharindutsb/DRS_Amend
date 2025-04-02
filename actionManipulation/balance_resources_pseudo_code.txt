@@ -1,0 +1,53 @@
+FUNCTION balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value):
+    Initialize resource_tracker as a nested dictionary to track resources by DRC and resource type.
+
+    FOR each case_id and its (drc, resource) in drcs:
+        Add case_id to resource_tracker[drc][resource].
+
+    TRY:
+        // Step 1: Validate existence of receiver_drc and donor_drc
+        IF receiver_drc or donor_drc do not exist in resource_tracker:
+            Log error and return failure with appropriate message.
+
+        // Step 2: Validate existence of rtom in both DRCs
+        IF rtom does not exist in receiver_drc or donor_drc:
+            Log error and return failure with appropriate message.
+
+        // Step 3: Check donor_drc's resource count to ensure it won't fall below 20% after transfer
+        Calculate donor_resource_count for rtom in donor_drc.
+        IF donor_resource_count > 0 AND (donor_resource_count - transfer_value < 20% of donor_resource_count):
+            Log error and return failure with appropriate message.
+
+        // Step 4: Check receiver_drc's resource count to ensure it won't fall below 20% after transfer
+        Calculate receiver_resource_count for rtom in receiver_drc.
+        IF receiver_resource_count > 0 AND (receiver_resource_count - transfer_value < 20% of receiver_resource_count):
+            Log error and return failure with appropriate message.
+
+        // Step 5: Perform the transfer of cases from donor_drc to receiver_drc
+        FOR transfer_value times:
+            Remove a case_id from donor_drc's rtom list and add it to receiver_drc's rtom list.
+
+        // Step 6: Balance back resources using round-robin method
+        Identify common resources between receiver_drc and donor_drc, excluding rtom.
+        Sort common resources by the number of cases in receiver_drc (descending).
+
+        Initialize remaining_value as transfer_value.
+        Initialize index as 0.
+        WHILE remaining_value > 0:
+            Select resource using round-robin from sorted common resources.
+            IF receiver_drc has at least one case for the selected resource:
+                Remove a case_id from receiver_drc's resource list and add it to donor_drc's resource list.
+                Decrement remaining_value.
+            Increment index.
+
+        // Convert resource_tracker back to the original drcs format
+        Initialize updated_drcs as an empty dictionary.
+        FOR each drc and its resources in resource_tracker:
+            FOR each resource and its case_ids:
+                FOR each case_id:
+                    Add case_id to updated_drcs with its drc and resource.
+
+        RETURN success and updated_drcs.
+
+    CATCH any exception as balance_error:
+        Log error and raise a ResourceBalanceError with the error message.
