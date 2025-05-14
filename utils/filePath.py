@@ -13,42 +13,77 @@ filePath.py file is as follows:
 
 import configparser
 import platform
+from pathlib import Path
+import logging
+ 
+def get_project_root():
+    """
+    Returns the project root directory dynamically.
+    Assumes this script is inside the project directory.
+    """
+    return Path(__file__).resolve().parent.parent  # Adjusted depth to match the actual project structure
 
 
 def get_filePath(key):
-    """
-    Retrieves the file path for the given key based on the operating system.
-    """
-    # Initialize ConfigParser
-    config = configparser.ConfigParser()
+    try:
+       
+        logger = logging.getLogger("System_logger")
+        logging.basicConfig(level=logging.INFO)  # Configure logging if not already set
 
-    # Load the .ini file (relative path)
-    config_file_path = 'config/filePaths.ini'
-    config.read(config_file_path)
+        # Initialize ConfigParser
+        config = configparser.ConfigParser()
 
-    # Determine the operating system
-    os_type = platform.system().lower()  # 'windows' or 'linux'
+        # Get the project root dynamically
+        project_root = get_project_root()
 
-    # Map OS type to key suffix
-    os_suffix = "WINDOWS" if os_type == 'windows' else "LINUX"
+        # Construct the config file path
+        config_file_path = project_root / "config" / "filePaths.ini"  # Ensure the path matches the actual directory structure
 
-    # Retrieve the path
-    if 'FILE_PATHS' in config:
-        requested_key = f"{key}_{os_suffix}"
-        path = config['FILE_PATHS'].get(requested_key, None)
-        if path:
-            return path
+        if not config_file_path.is_file():
+            raise FileNotFoundError(f"Configuration file '{config_file_path}' not found.")
+
+        config.read(str(config_file_path))  # Ensure path is read as a string
+
+        # Determine the operating system
+        os_type = platform.system().lower()  # 'windows' or 'linux'
+
+        # Map OS type to key suffix
+        os_suffix = "WIN" if os_type == 'windows' else "LIN"
+
+        # Define section mappings
+        section_mapping = {
+            "loggers": "loggersFile_Path",
+            "DB_Config": "DB_ConfigFile_Path",
+            "filePaths": "FilePathConfigFile_path",
+            "Set_Template_TaskID": "Set_Template_TaskIDFile_Path",
+        }
+
+        # Retrieve section name
+        section = section_mapping.get(key)
+        if not section:
+            raise KeyError(f"Key '{key}' does not have a mapped section.")
+
+        # Retrieve the path
+        if section in config:
+            requested_key = f"{os_suffix}_CONFIG"  # Corrected key suffix to match the INI file structure
+            path = config[section].get(requested_key, "").strip()
+
+            if not path:
+                logger.error(f"Key '{requested_key}' not found in section '{section}'.")
+                return False  # Return False if the key is missing
+
+            return Path(path)  # Return as Path object for consistency
+
         else:
-            return f"Key '{requested_key}' not found in the configuration file."
-    else:
-        return "FILE_PATHS section is missing in the configuration file."
+            logger.error(f"Section '{section}' is missing in the configuration file.")
+            return False  # Return False if the section is missing
 
-
-# test function
-if __name__ == "__main__":
-    # Request paths dynamically
-    log_path = get_filePath("LOG")
-    print(f"Log Path: {log_path}")
-
-    config_path = get_filePath("CONFIG")
-    print(f"Config Path: {config_path}")
+    except FileNotFoundError as fnf_error:
+        logger.error(f"Error: {fnf_error}")
+        return False  
+    except KeyError as key_error:
+        logger.error(f"Error: {key_error}")
+        return False  
+    except Exception as e:
+        logger.error(f"Error: Unexpected error occurred - {e}")
+        return False 

@@ -16,6 +16,7 @@ from pymongo import MongoClient
 import os
 from utils.loggers import get_logger
 from utils.Custom_Exceptions import DatabaseConnectionError
+from utils.filePath import get_filePath
 
 # Collection names
 CASE_COLLECTION = "DRS.Tmp_Case_Distribution_DRC"   # Temporary collection for case distribution
@@ -30,7 +31,7 @@ logger = get_logger("database_logger")
 # Read configuration from DB_Config.ini file
 def get_db_connection():
 
-    config_path = "config/DB_Config.ini"
+    config_path = get_filePath("DB_Config")
     if not os.path.exists(config_path):
         logger.error(f"Configuration file '{config_path}' not found.")
         raise DatabaseConnectionError(f"Configuration file '{config_path}' not found.")

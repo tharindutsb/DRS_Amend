@@ -1,0 +1,169 @@
+Project: DRS Amend  
+Purpose: Automates the process of distributing and balancing resources among DRCs (Distribution Resource Centers).  
+The system processes tasks, validates data, balances resources, and updates the database while ensuring data integrity and robust error handling.
+
+---
+
+## MAIN WORKFLOW:
+1. **Start Task Processing**:
+   - Entry point: `main.py`
+   - Calls the `amend_task_processing()` function to process all open tasks.
+
+2. **Read Configuration**:
+   - Reads `TEMPLATE_TASK_ID` from `Set_Template_TaskID.ini` using `read_template_task_id_ini.py`.
+   - Establishes a database connection using `connectDB.py`.
+
+3. **Fetch Open Tasks**:
+   - Queries the `System_tasks` collection for tasks with:
+     - `task_status = "open"`
+     - `task_type = "Case Amend Planning among DRC"`
+
+4. **Process Each Task**:
+   - For each open task:
+     a. **Update Task Status**:
+        - Marks the task as "processing" in the `System_tasks` collection.
+     b. **Validate Template Task**:
+        - Fetches and validates the corresponding template task from the `Template_task` collection.
+        - Ensures `Template_Task_Id`, `task_type`, and parameters match.
+     c. **Fetch Transaction Details**:
+        - Queries the `Case_distribution_drc_transactions` collection for transaction details.
+        - Validates the `array_of_distributions` field to ensure all required keys are present.
+     d. **Fetch Cases**:
+        - Fetches cases for the batch from the `DRS.Tmp_Case_Distribution_DRC` collection.
+        - Converts cases into a dictionary format for processing.
+     e. **Balance Resources**:
+        - Uses `balance_resources()` to balance resources between donor and receiver DRCs.
+        - Ensures donor and receiver DRCs do not fall below 20% of their resources.
+     f. **Update Databases**:
+        - Updates the `DRS.Tmp_Case_Distribution_DRC` collection with new DRC assignments.
+        - Updates the `DRS_Database.Case_Distribution_DRC_Summary` collection with new counts.
+        - Marks the transaction as "closed" in the `Case_distribution_drc_transactions` collection.
+     g. **Handle Errors**:
+        - If any step fails:
+          - Rolls back database changes.
+          - Marks the task as "error" in the `System_tasks` collection.
+     h. **Complete Task**:
+        - If all steps succeed, marks the task as "completed" in the `System_tasks` collection.
+
+5. **Reset and Import Data** (Optional):
+   - Uses `database_update.py` to reset MongoDB collections and import data from JSON files.
+
+---
+
+## DETAILED FUNCTIONAL MODULES:
+
+### **1. Database Checks (`database_checks.py`)**
+- **Purpose**: Validates and fetches data from the database.
+- **Key Functions**:
+  - `update_task_status`: Updates the status of tasks in the `System_tasks` collection.
+  - `fetch_and_validate_template_task`: Fetches and validates template tasks from the `Template_task` collection.
+  - `fetch_transaction_details`: Fetches transaction details for a batch from the `Case_distribution_drc_transactions` collection.
+  - `fetch_cases_for_batch`: Fetches cases for a given batch ID from the `DRS.Tmp_Case_Distribution_DRC` collection.
+- **Logic**:
+  - Ensures data integrity by validating the existence and correctness of tasks, template tasks, and transaction details.
+  - Handles errors gracefully by logging and raising exceptions.
+
+---
+
+### **2. Task Processor (`task_processor.py`)**
+- **Purpose**: Orchestrates the entire workflow for processing tasks.
+- **Key Functions**:
+  - `check_template_task_in_system_tasks`: Checks if a template task exists in the `System_tasks` collection.
+  - `validate_template_task_parameters`: Validates that the `Template_Task_Id`, `task_type`, and parameters match between `System_tasks` and `Template_task`.
+  - `process_single_batch`: Processes a single batch for a task, including validation, resource balancing, and database updates.
+  - `amend_task_processing`: Processes all open tasks in the system.
+- **Logic**:
+  - Ensures each step is executed in sequence and handles errors at each stage.
+
+---
+
+### **3. Resource Balancing (`balance_resources.py`)**
+- **Purpose**: Balances resources between donor and receiver DRCs.
+- **Key Functions**:
+  - `balance_resources`: Balances resources between donor and receiver DRCs based on the given logic.
+- **Logic**:
+  - Ensures donor and receiver DRCs do not fall below 20% of their resources after the transfer.
+  - Uses a round-robin method to balance back resources, excluding the resource being transferred (`rtom`).
+
+---
+
+### **4. Database Updates (`update_databases.py`)**
+- **Purpose**: Updates and rolls back database collections.
+- **Key Functions**:
+  - `update_template_task_collection`: Updates the `Template_task` collection with new parameters.
+  - `update_case_distribution_collection`: Updates the `DRS.Tmp_Case_Distribution_DRC` collection with new DRC assignments.
+  - `rollback_case_distribution_collection`: Rolls back changes to the `DRS.Tmp_Case_Distribution_DRC` collection.
+  - `update_summary_in_mongo`: Updates the `DRS_Database.Case_Distribution_DRC_Summary` collection with new counts.
+  - `rollback_summary_in_mongo`: Rolls back changes to the `DRS_Database.Case_Distribution_DRC_Summary` collection.
+- **Logic**:
+  - Ensures database consistency by updating or rolling back changes as needed.
+  - Handles errors gracefully by logging and raising exceptions.
+
+---
+
+### **5. Utilities (`utils/`)**
+- **Purpose**: Provides helper scripts for logging, database connections, and exception handling.
+- **Key Files**:
+  - `connectDB.py`: Handles database connections and collection initialization.
+    - **Functions**:
+      - `get_db_connection`: Establishes a connection to the database.
+      - `get_collection`: Retrieves a specific collection from the database.
+  - `Custom_Exceptions.py`: Defines custom exceptions for error handling.
+    - **Exceptions**:
+      - `TaskProcessingError`: General task processing errors.
+      - `DatabaseConnectionError`: Issues connecting to the database.
+      - `TaskValidationError`: Validation failures for tasks.
+      - `ResourceBalanceError`: Failures during resource balancing.
+      - `DatabaseUpdateError`: Issues updating the database.
+  - `loggers.py`: Provides logging utilities for the project.
+  - `read_template_task_id_ini.py`: Reads the `TEMPLATE_TASK_ID` from the configuration file.
+
+---
+
+### **6. Database Reset (`database_update.py`)**
+- **Purpose**: Resets MongoDB collections and imports data from JSON files.
+- **Logic**:
+  - Deletes all documents from the specified collections.
+  - Imports data from JSON files into the collections.
+  - Converts `$oid` fields to `ObjectId` for MongoDB compatibility.
+
+---
+
+## ERROR HANDLING:
+- **Custom Exceptions**:
+  - `TaskProcessingError`: General task processing errors.
+  - `DatabaseConnectionError`: Issues connecting to the database.
+  - `TaskValidationError`: Validation failures for tasks.
+  - `ResourceBalanceError`: Failures during resource balancing.
+  - `DatabaseUpdateError`: Issues updating the database.
+- **Approach**:
+  - Each module logs errors and raises exceptions to ensure issues are handled appropriately.
+
+---
+
+## CONFIGURATION FILES:
+1. **DB_Config.ini**:
+   - Contains database connection details (e.g., `MONGO_URI`, `DB_NAME`).
+
+2. **Set_Template_TaskID.ini**:
+   - Stores the `TEMPLATE_TASK_ID` used for processing tasks.
+
+---
+
+## EXAMPLE WORKFLOW:
+1. Start the project by running `main.py`.
+2. The `amend_task_processing()` function fetches open tasks and processes them one by one.
+3. For each task:
+   - Validate the template task.
+   - Fetch transaction details and cases.
+   - Balance resources between DRCs.
+   - Update the database with new assignments and counts.
+4. If any step fails:
+   - Roll back changes.
+   - Mark the task as "error".
+5. If all steps succeed:
+   - Mark the task as "completed".
+
+---
+
+This detailed project structure provides a comprehensive understanding of the workflow, logic, and functionality of each component in the DRS Amend project.

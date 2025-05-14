@@ -1,13 +1,13 @@
 '''
  main.py file is as follows:
 
-    Purpose: This script initializes the logger and starts the task processing.
-    Created Date: 2025-03-01
+    Purpose: This script handles database connections and collection initialization.
+    Created Date: 2025-01-08
     Created By:  T.S.Balasooriya (tharindutsb@gmail.com) , Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)
-    Last Modified Date: 2025-03-15
+    Last Modified Date: 2024-01-19
     Modified By: T.S.Balasooriya (tharindutsb@gmail.com), Pasan(pasanbathiya246@gmail.com),Amupama(anupamamaheepala999@gmail.com)     
     Version: Python 3.9
-    Dependencies: actionManipulation.task_processor, utils.loggers
+    Dependencies: configparser, pymongo, os, utils.loggers, utils.Custom_Exceptions
     Notes:
 '''
 

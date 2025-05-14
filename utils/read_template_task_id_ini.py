@@ -15,6 +15,7 @@ read_template_task_id_ini.py file is as follows:
 import configparser
 from utils.loggers import get_logger
 from utils.Custom_Exceptions import INIFileReadError
+from utils.filePath import get_filePath
 
 logger = get_logger("amend_status_logger")
 
@@ -23,7 +24,7 @@ def read_template_task_id_ini():
     Reads the TEMPLATE_TASK_ID from the INI file.
     Returns: (success, template_task_id or error)
     """
-    file_path = "config/Set_Template_TaskID.ini"
+    file_path = get_filePath("Set_Template_TaskID")
     try:
         config = configparser.ConfigParser()
         config.read(file_path)
