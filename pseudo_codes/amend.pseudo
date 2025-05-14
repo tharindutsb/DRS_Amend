@@ -1,0 +1,666 @@
+### Assumptions
+1. **Database Availability**: A MongoDB instance is running and accessible with the credentials provided in `DB_Config.ini`.
+2. **Configuration Files**: All configuration files (`DB_Config.ini`, `Set_Template_TaskID.ini`, `filePaths.ini`, `loggers.ini`) are present in the `config/` directory and correctly formatted.
+3. **Operating System**: The system runs on either Windows or Linux, and the `filePaths.ini` file provides appropriate paths for the OS.
+4. **MongoDB Collections**: The required collections (`System_tasks`, `Template_task`, `Case_distribution_drc_transactions`, `DRS.Tmp_Case_Distribution_DRC`, `DRS_Database.Case_Distribution_DRC_Summary`) exist in the database `drs_case_distribution_db`.
+5. **Task Data**: Tasks in the `System_tasks` collection have a status of "open" and a task type of "Case Amend Planning among DRC". Each task includes a `Task_Id`, `Template_Task_Id`, `task_type`, and `parameters` with a `Case_Distribution_Batch_ID`.
+6. **Transaction Data**: The `Case_distribution_drc_transactions` collection contains records with `Case_Distribution_Batch_ID`, `summery_status`, and `batch_seq_details` (including `action_type`, `CRD_Distribution_Status`, and `array_of_distributions` with `rtom`, `donor_drc_id`, `receiver_drc_id`, `transfer_count`).
+7. **Case Data**: The `DRS.Tmp_Case_Distribution_DRC` collection contains case records with `Case_Id`, `DRC_Id`, `RTOM`, and `Case_Distribution_Batch_ID`.
+8. **Resource Threshold**: The system ensures that resource counts (cases) for a specific `RTOM` in a DRC do not fall below 20% after a transfer.
+9. **Logging**: The `logs` directory is writable, and `loggers.ini` is configured to handle log rotation correctly.
+10. **Template Task ID**: The `Set_Template_TaskID.ini` file contains a valid `TEMPLATE_TASK_ID` (e.g., 26).
+11. **No External Dependencies**: The system does not rely on external services beyond MongoDB and the provided Python libraries (`pymongo`, `configparser`).
+12. **Error Recovery**: Rollbacks are possible for database updates to maintain consistency in case of failures.
+13. **Single-Threaded Execution**: The system processes tasks sequentially, as implied by the `amend_task_processing` function.
+
+### Pseudocode
+
+```
+// Main Entry Point
+FUNCTION main()
+    TRY
+        INITIALIZE logger with name "task_status_logger" using loggers.ini
+        LOG "Starting task processing..."
+        CALL amend_task_processing()
+        LOG "Task processing completed."
+    CATCH any_error
+        LOG ERROR "Unexpected error in main: " + any_error
+    END TRY
+END FUNCTION
+
+// Process All Open Tasks
+FUNCTION amend_task_processing()
+    TRY
+        LOG "Starting task processing..."
+        
+        // Read TEMPLATE_TASK_ID from Set_Template_TaskID.ini
+        SET template_task_id = CALL get_template_task_id()
+        
+        // Connect to System_tasks collection
+        SET system_task_collection = CALL get_collection("System_tasks")
+        
+        // Fetch open tasks with task_type "Case Amend Planning among DRC"
+        SET open_tasks = FIND documents in system_task_collection WHERE
+            task_status = "open" AND task_type = "Case Amend Planning among DRC"
+        
+        IF open_tasks is EMPTY
+            LOG WARNING "No open tasks found for Template_Task_Id " + template_task_id
+            RETURN
+        END IF
+        
+        FOR EACH task IN open_tasks
+            SET case_distribution_batch_id = task.parameters.Case_Distribution_Batch_ID
+            
+            // Update Template_task collection
+            SET success, message = CALL update_template_task_collection(case_distribution_batch_id)
+            IF NOT success
+                LOG ERROR message
+                THROW TaskProcessingException(message)
+            END IF
+            
+            // Fetch and validate template task
+            SET template_task_collection = CALL get_collection("Template_task")
+            SET template_task = FIND ONE document in template_task_collection WHERE
+                Template_Task_Id = template_task_id AND task_type = "Case Amend Planning among DRC"
+            
+            IF template_task is NULL
+                SET error_message = "No matching template task found for Template_Task_Id " + template_task_id
+                LOG ERROR error_message
+                THROW TaskProcessingException(error_message)
+            END IF
+            
+            // Validate task parameters
+            SET success, message = CALL validate_template_task_parameters(task, template_task)
+            IF NOT success
+                LOG ERROR message
+                THROW TaskProcessingException(message)
+            END IF
+            
+            // Process the task
+            CALL process_single_batch(task)
+        END FOR
+        
+        LOG "Task processing completed."
+    CATCH TaskProcessingException as error
+        LOG ERROR "Task processing error: " + error
+    CATCH any_error
+        LOG ERROR "Unexpected error during task processing: " + any_error
+    END TRY
+END FUNCTION
+
+// Process a Single Task Batch
+FUNCTION process_single_batch(task)
+    SET task_id = task.Task_Id
+    SET template_task_id = task.Template_Task_Id
+    SET task_type = task.task_type
+    SET case_distribution_batch_id = task.parameters.Case_Distribution_Batch_ID
+    
+    TRY
+        // Step 1: Update task status to "processing"
+        SET system_task_collection = CALL get_collection("System_tasks")
+        SET success, error = CALL update_task_status(system_task_collection, task_id, "processing", "Task is being processed")
+        IF NOT success
+            LOG ERROR error
+            THROW TaskProcessingException(error)
+        END IF
+        
+        // Step 2: Fetch and validate template task
+        SET template_task_collection = CALL get_collection("Template_task")
+        SET success, result = CALL fetch_and_validate_template_task(template_task_collection, template_task_id, task_type)
+        IF NOT success
+            LOG ERROR result
+            THROW TaskProcessingException(result)
+        END IF
+        SET template_task = result
+        
+        // Step 3: Validate template task parameters
+        SET success, message = CALL validate_template_task_parameters(task, template_task)
+        IF NOT success
+            LOG ERROR message
+            THROW TaskProcessingException(message)
+        END IF
+        
+        // Step 4: Fetch transaction details
+        SET transaction_collection = CALL get_collection("Case_distribution_drc_transactions")
+        SET success, result = CALL fetch_transaction_details(transaction_collection, case_distribution_batch_id)
+        IF NOT success
+            LOG ERROR result
+            THROW TaskProcessingException(result)
+        END IF
+        SET amend_details = result
+        
+        // Step 5: Fetch cases for the batch
+        SET case_collection = CALL get_collection("DRS.Tmp_Case_Distribution_DRC")
+        SET success, cases = CALL fetch_cases_for_batch(case_collection, case_distribution_batch_id)
+        IF NOT success
+            LOG ERROR cases
+            THROW TaskProcessingException(cases)
+        END IF
+        
+        // Convert cases to dictionary format
+        INITIALIZE drcs = EMPTY DICTIONARY
+        INITIALIZE existing_drcs = EMPTY DICTIONARY
+        FOR EACH case IN cases
+            IF case contains Case_Id, DRC_Id, RTOM
+                SET drcs[case.Case_Id] = [case.DRC_Id, case.RTOM]
+                SET existing_drcs[case.Case_Id] = case.DRC_Id
+            ELSE
+                LOG WARNING "Skipping case due to missing fields: " + case
+            END IF
+        END FOR
+        
+        // Step 6: Process amendments
+        SET array_of_distributions = amend_details.array_of_distributions
+        FOR EACH distribution IN array_of_distributions
+            SET receiver_drc = distribution.receiver_drc_id
+            SET donor_drc = distribution.donor_drc_id
+            SET rtom = distribution.rtom
+            SET transfer_value = distribution.transfer_count
+            
+            // Step 7: Balance resources
+            SET success, result = CALL balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value)
+            IF NOT success
+                LOG ERROR result
+                THROW TaskProcessingException(result)
+            END IF
+            SET updated_drcs = result
+            
+            // Step 8: Update case distribution collection
+            SET success, original_states = CALL update_case_distribution_collection(case_collection, updated_drcs, existing_drcs)
+            IF NOT success
+                LOG ERROR original_states
+                THROW TaskProcessingException(original_states)
+            END IF
+            
+            // Step 9: Update summary in MongoDB
+            SET summary_collection = CALL get_collection("DRS_Database.Case_Distribution_DRC_Summary")
+            SET success, original_counts = CALL update_summary_in_mongo(summary_collection, transaction_collection, updated_drcs, case_distribution_batch_id)
+            IF NOT success
+                LOG ERROR original_counts
+                CALL rollback_case_distribution_collection(case_collection, original_states)
+                THROW TaskProcessingException(original_counts)
+            END IF
+        END FOR
+        
+        // Step 10: Update task status to "completed"
+        SET success, error = CALL update_task_status(system_task_collection, task_id, "completed", "Task completed successfully")
+        IF NOT success
+            LOG ERROR error
+            CALL rollback_case_distribution_collection(case_collection, original_states)
+            CALL rollback_summary_in_mongo(summary_collection, original_counts, case_distribution_batch_id)
+            THROW TaskProcessingException(error)
+        END IF
+        
+        LOG INFO "Task ID " + task_id + " completed successfully."
+    CATCH TaskProcessingException as error
+        LOG ERROR "Error in Task ID " + task_id + ": " + error
+        CALL update_task_status(system_task_collection, task_id, "error", error)
+    CATCH any_error
+        LOG ERROR "Unexpected error in Task ID " + task_id + ": " + any_error
+        CALL update_task_status(system_task_collection, task_id, "error", any_error)
+    END TRY
+END FUNCTION
+
+// Update Task Status in System_tasks Collection
+FUNCTION update_task_status(system_task_collection, task_id, status, error_description = NULL)
+    TRY
+        LOG INFO "Updating task status to '" + status + "' for Task ID " + task_id
+        INITIALIZE update_fields = {
+            task_status: status,
+            status_changed_dtm: CURRENT_TIMESTAMP,
+            last_updated: CURRENT_TIMESTAMP
+        }
+        IF error_description is NOT NULL
+            SET update_fields.status_description = error_description
+        END IF
+        
+        UPDATE ONE document in system_task_collection WHERE Task_Id = task_id
+            SET update_fields
+        LOG INFO "Task ID " + task_id + " status updated to '" + status + "' successfully."
+        RETURN TRUE, NULL
+    CATCH update_error
+        LOG ERROR "Failed to update task status for Task ID " + task_id + ": " + update_error
+        THROW TaskValidationError("Failed to update task status for Task ID " + task_id + ": " + update_error)
+    END TRY
+END FUNCTION
+
+// Fetch and Validate Template Task
+FUNCTION fetch_and_validate_template_task(template_task_collection, template_task_id, task_type)
+    TRY
+        LOG INFO "Querying template_task collection for matching task..."
+        SET template_task = FIND ONE document in template_task_collection WHERE
+            Template_Task_Id = template_task_id AND task_type = task_type
+        IF template_task is NULL
+            SET error_message = "No matching template task found for Template_Task_Id " + template_task_id
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        RETURN TRUE, template_task
+    CATCH fetch_error
+        LOG ERROR "Failed to fetch or validate template task: " + fetch_error
+        THROW TaskValidationError("Failed to fetch or validate template task: " + fetch_error)
+    END TRY
+END FUNCTION
+
+// Fetch Transaction Details
+FUNCTION fetch_transaction_details(transaction_collection, case_distribution_batch_id)
+    TRY
+        LOG INFO "Querying transaction collection for Batch ID: " + case_distribution_batch_id
+        SET transaction_record = FIND ONE document in transaction_collection WHERE
+            Case_Distribution_Batch_ID = case_distribution_batch_id AND
+            summery_status = "open" AND
+            batch_seq_details.CRD_Distribution_Status = "open"
+        IF transaction_record is NULL
+            SET error_message = "No open transaction record found for Batch ID " + case_distribution_batch_id
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        SET amend_action = NULL
+        FOR EACH batch_seq IN transaction_record.batch_seq_details
+            IF batch_seq.action_type = "amend" AND batch_seq.CRD_Distribution_Status = "open"
+                SET amend_action = batch_seq
+                BREAK
+            END IF
+        END FOR
+        
+        IF amend_action is NULL
+            SET error_message = "No open amend action found for Batch ID " + case_distribution_batch_id
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        SET array_of_distributions = amend_action.array_of_distributions
+        IF array_of_distributions is EMPTY
+            SET error_message = "No array_of_distributions found for amend action in Batch ID " + case_distribution_batch_id
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        FOR EACH distribution IN array_of_distributions
+            IF NOT (distribution contains rtom, donor_drc_id, receiver_drc_id, transfer_count)
+                SET error_message = "Missing mandatory fields in array_of_distributions for Batch ID " + case_distribution_batch_id
+                LOG ERROR error_message
+                RETURN FALSE, error_message
+            END IF
+        END FOR
+        
+        RETURN TRUE, amend_action
+    CATCH fetch_error
+        LOG ERROR "Failed to fetch or validate transaction details: " + fetch_error
+        THROW TaskValidationError("Failed to fetch or validate transaction details: " + fetch_error)
+    END TRY
+END FUNCTION
+
+// Fetch Cases for a Batch
+FUNCTION fetch_cases_for_batch(case_collection, case_distribution_batch_id)
+    TRY
+        LOG INFO "Fetching cases for Batch ID " + case_distribution_batch_id
+        SET cases = FIND ALL documents in case_collection WHERE
+            Case_Distribution_Batch_ID = case_distribution_batch_id
+        LOG INFO "Found " + LENGTH(cases) + " cases for Batch ID " + case_distribution_batch_id
+        RETURN TRUE, cases
+    CATCH fetch_error
+        LOG ERROR "Failed to fetch cases for batch ID " + case_distribution_batch_id + ": " + fetch_error
+        THROW TaskValidationError("Failed to fetch cases for batch ID " + case_distribution_batch_id + ": " + fetch_error)
+    END TRY
+END FUNCTION
+
+// Balance Resources Between DRCs
+FUNCTION balance_resources(drcs, receiver_drc, donor_drc, rtom, transfer_value)
+    INITIALIZE resource_tracker = EMPTY DICTIONARY with default value EMPTY DICTIONARY of LISTS
+    FOR EACH case_id, (drc, resource) IN drcs
+        APPEND case_id TO resource_tracker[drc][resource]
+    END FOR
+    
+    TRY
+        // Step 1: Validate DRC existence
+        IF receiver_drc NOT IN resource_tracker OR donor_drc NOT IN resource_tracker
+            SET error_message = "One of the DRCs (" + receiver_drc + " or " + donor_drc + ") does not exist."
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        // Step 2: Validate RTOM existence
+        IF rtom NOT IN resource_tracker[receiver_drc] OR rtom NOT IN resource_tracker[donor_drc]
+            SET error_message = "The resource " + rtom + " does not exist in both " + receiver_drc + " and " + donor_drc
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        // Step 3: Check donor resource threshold
+        SET donor_resource_count = LENGTH(resource_tracker[donor_drc][rtom])
+        IF donor_resource_count > 0 AND (donor_resource_count - transfer_value < 0.2 * donor_resource_count)
+            SET error_message = "Insufficient resources in " + donor_drc + " for the Donate."
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        // Step 4: Check receiver resource threshold
+        SET receiver_resource_count = LENGTH(resource_tracker[receiver_drc][rtom])
+        IF receiver_resource_count > 0 AND (receiver_resource_count - transfer_value < 0.2 * receiver_resource_count)
+            SET error_message = "Insufficient resources in " + receiver_drc + " for the Balance."
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        // Step 5: Perform the transfer
+        FOR i FROM 1 TO transfer_value
+            SET case_id = REMOVE FIRST case_id FROM resource_tracker[donor_drc][rtom]
+            APPEND case_id TO resource_tracker[receiver_drc][rtom]
+        END FOR
+        
+        // Step 6: Balance back using round-robin
+        SET common_resources = INTERSECTION OF resource_tracker[receiver_drc].keys AND resource_tracker[donor_drc].keys
+        REMOVE rtom FROM common_resources
+        SET sorted_resources = SORT common_resources BY LENGTH(resource_tracker[receiver_drc][resource]) IN DESCENDING ORDER
+        
+        SET remaining_value = transfer_value
+        SET index = 0
+        WHILE remaining_value > 0
+            SET resource = sorted_resources[index MOD LENGTH(sorted_resources)]
+            IF LENGTH(resource_tracker[receiver_drc][resource]) >= 1
+                SET case_id = REMOVE FIRST case_id FROM resource_tracker[receiver_drc][resource]
+                APPEND case_id TO resource_tracker[donor_drc][resource]
+                DECREMENT remaining_value
+            END IF
+            INCREMENT index
+        END WHILE
+        
+        // Convert resource_tracker back to drcs format
+        INITIALIZE updated_drcs = EMPTY DICTIONARY
+        FOR EACH drc, resources IN resource_tracker
+            FOR EACH resource, case_ids IN resources
+                FOR EACH case_id IN case_ids
+                    SET updated_drcs[case_id] = [drc, resource]
+                END FOR
+            END FOR
+        END FOR
+        
+        RETURN TRUE, updated_drcs
+    CATCH balance_error
+        LOG ERROR "Error balancing resources: " + balance_error
+        THROW ResourceBalanceError("Error balancing resources: " + balance_error)
+    END TRY
+END FUNCTION
+
+// Update Template_task Collection
+FUNCTION update_template_task_collection(case_distribution_batch_id)
+    TRY
+        SET template_task_collection = CALL get_collection("Template_task")
+        SET ini_template_task_id = CALL get_template_task_id()
+        
+        SET existing_template_task = FIND ONE document in template_task_collection WHERE
+            task_type = "Case Amend Planning among DRC"
+        
+        IF existing_template_task is NULL
+            SET error_message = "No template task found for 'Case Amend Planning among DRC'."
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        IF existing_template_task.Template_Task_Id != ini_template_task_id
+            UPDATE ONE document in template_task_collection WHERE
+                task_type = "Case Amend Planning among DRC"
+                SET Template_Task_Id = ini_template_task_id,
+                    parameters.Case_Distribution_Batch_ID = case_distribution_batch_id,
+                    last_updated_dtm = CURRENT_TIMESTAMP
+            IF no documents modified
+                SET error_message = "Failed to update Template_Task_Id to " + ini_template_task_id
+                LOG ERROR error_message
+                RETURN FALSE, error_message
+            END IF
+            LOG INFO "Template_Task_Id updated to " + ini_template_task_id
+        ELSE
+            UPDATE ONE document in template_task_collection WHERE
+                task_type = "Case Amend Planning among DRC"
+                SET parameters.Case_Distribution_Batch_ID = case_distribution_batch_id,
+                    last_updated_dtm = CURRENT_TIMESTAMP
+            IF no documents modified
+                SET error_message = "Failed to update parameters for Template_Task_Id " + ini_template_task_id
+                LOG ERROR error_message
+                RETURN FALSE, error_message
+            END IF
+            LOG INFO "Parameters updated for Template_Task_Id " + ini_template_task_id
+        END IF
+        
+        RETURN TRUE, "Template task collection updated successfully."
+    CATCH update_error
+        LOG ERROR "Failed to update Template_Task collection: " + update_error
+        RETURN FALSE, update_error
+    END TRY
+END FUNCTION
+
+// Update Case Distribution Collection
+FUNCTION update_case_distribution_collection(case_collection, updated_drcs, existing_drcs)
+    TRY
+        LOG INFO "Updating case distribution collection..."
+        INITIALIZE original_states = EMPTY DICTIONARY
+        
+        FOR EACH case_id, (new_drc, resource) IN updated_drcs
+            IF case_id IN existing_drcs AND existing_drcs[case_id] != new_drc
+                SET original_states[case_id] = existing_drcs[case_id]
+                UPDATE ONE document in case_collection WHERE Case_Id = case_id
+                    SET NEW_DRC_ID = new_drc,
+                        Proceed_On = CURRENT_TIMESTAMP,
+                        Amend_Status = "Completed",
+                        Amend_Description = "Transferred to " + new_drc
+            END IF
+        END FOR
+        
+        RETURN TRUE, original_states
+    CATCH update_error
+        LOG ERROR "Failed to update case distribution collection: " + update_error
+        THROW DatabaseUpdateError("Failed to update case distribution collection: " + update_error)
+    END TRY
+END FUNCTION
+
+// Rollback Case Distribution Collection
+FUNCTION rollback_case_distribution_collection(case_collection, original_states)
+    TRY
+        LOG INFO "Rolling back case distribution collection..."
+        FOR EACH case_id, original_drc IN original_states
+            UPDATE ONE document in case_collection WHERE Case_Id = case_id
+                SET NEW_DRC_ID = original_drc,
+                    Proceed_On = CURRENT_TIMESTAMP,
+                    Amend_Status = "Rolled Back",
+                    Amend_Description = "Rolled back to " + original_drc
+        END FOR
+        LOG INFO "Case distribution collection rolled back successfully."
+        RETURN TRUE, "Case distribution collection rolled back successfully."
+    CATCH rollback_error
+        LOG ERROR "Failed to roll back case distribution collection: " + rollback_error
+        THROW DatabaseUpdateError("Failed to roll back case distribution collection: " + rollback_error)
+    END TRY
+END FUNCTION
+
+// Update Summary in MongoDB
+FUNCTION update_summary_in_mongo(summary_collection, transaction_collection, updated_drcs, case_distribution_batch_id)
+    TRY
+        LOG INFO "Updating summary in MongoDB..."
+        INITIALIZE original_counts = EMPTY DICTIONARY
+        FOR EACH case_id, (drc, rtom) IN updated_drcs
+            SET original_counts[(drc, rtom)] = FIND ONE document in summary_collection
+                WHERE Case_Distribution_Batch_ID = case_distribution_batch_id
+                AND DRC_Id = drc AND RTOM = rtom
+                SELECT Count
+        END FOR
+        
+        INITIALIZE count_dict = EMPTY DICTIONARY with default value EMPTY DICTIONARY of INTEGERS
+        FOR EACH case_id, (drc, rtom) IN updated_drcs
+            INCREMENT count_dict[drc][rtom]
+        END FOR
+        
+        FOR EACH drc, resources IN count_dict
+            FOR EACH rtom, count IN resources
+                UPDATE ONE document in summary_collection
+                    WHERE Case_Distribution_Batch_ID = case_distribution_batch_id
+                    AND DRC_Id = drc AND RTOM = rtom
+                    SET Count = count
+                    UPSERT IF NOT EXISTS
+            END FOR
+        END FOR
+        
+        UPDATE ONE document in transaction_collection
+            WHERE Case_Distribution_Batch_ID = case_distribution_batch_id
+            AND batch_seq_details.action_type = "amend"
+            AND batch_seq_details.CRD_Distribution_Status = "open"
+            AND summery_status = "open"
+            SET batch_seq_details.$.CRD_Distribution_Status = "close",
+                summery_status = "close"
+        
+        LOG INFO "Updated CRD_Distribution_Status to 'close' for Batch ID: " + case_distribution_batch_id
+        RETURN TRUE, original_counts
+    CATCH update_error
+        LOG ERROR "Failed to update summary in MongoDB: " + update_error
+        THROW DatabaseUpdateError("Failed to update summary in MongoDB: " + update_error)
+    END TRY
+END FUNCTION
+
+// Rollback Summary in MongoDB
+FUNCTION rollback_summary_in_mongo(summary_collection, original_counts, case_distribution_batch_id)
+    TRY
+        LOG INFO "Rolling back summary in MongoDB..."
+        FOR EACH (drc, rtom), original_count IN original_counts
+            UPDATE ONE document in summary_collection
+                WHERE Case_Distribution_Batch_ID = case_distribution_batch_id
+                AND DRC_Id = drc AND RTOM = rtom
+                SET Count = original_count.Count OR 0
+        END FOR
+        LOG INFO "Summary collection rolled back successfully."
+        RETURN TRUE, "Summary collection rolled back successfully."
+    CATCH rollback_error
+        LOG ERROR "Failed to roll back summary in MongoDB: " + rollback_error
+        THROW DatabaseUpdateError("Failed to roll back summary in MongoDB: " + rollback_error)
+    END TRY
+END FUNCTION
+
+// Validate Template Task Parameters
+FUNCTION validate_template_task_parameters(system_task, template_task)
+    TRY
+        IF system_task.Template_Task_Id != template_task.Template_Task_Id
+            SET error_message = "Template_Task_Id mismatch: System_tasks has " + system_task.Template_Task_Id + ", Template_Task has " + template_task.Template_Task_Id
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        IF system_task.task_type != template_task.task_type
+            SET error_message = "Task type mismatch: System_tasks has " + system_task.task_type + ", Template_Task has " + template_task.task_type
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        SET system_task_batch_id = system_task.parameters.Case_Distribution_Batch_ID OR ""
+        SET template_task_batch_id = template_task.parameters.Case_Distribution_Batch_ID OR ""
+        IF system_task_batch_id != template_task_batch_id
+            SET error_message = "Case_Distribution_Batch_ID mismatch: System_tasks has " + system_task_batch_id + ", Template_Task has " + template_task_batch_id
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+        
+        LOG INFO "Template_Task_Id, task_type, and parameters match between System_tasks and Template_Task collections."
+        RETURN TRUE, "Parameters validated successfully."
+    CATCH validation_error
+        LOG ERROR "Failed to validate template task parameters: " + validation_error
+        RETURN FALSE, validation_error
+    END TRY
+END FUNCTION
+
+// Check Template Task in System_tasks
+FUNCTION check_template_task_in_system_tasks(template_task_id)
+    TRY
+        SET system_task_collection = CALL get_collection("System_tasks")
+        SET exists = FIND ONE document in system_task_collection WHERE Template_Task_Id = template_task_id
+        IF exists
+            LOG INFO "Template_Task_Id " + template_task_id + " exists in the System_tasks collection."
+        ELSE
+            LOG WARNING "Template_Task_Id " + template_task_id + " does not exist in the System_tasks collection."
+        END IF
+        RETURN TRUE, exists
+    CATCH db_check_error
+        LOG ERROR "Failed to check System_tasks collection: " + db_check_error
+        RETURN FALSE, db_check_error
+    END TRY
+END FUNCTION
+
+// Get Template Task ID from INI File
+FUNCTION get_template_task_id()
+    TRY
+        SET success, result = CALL read_template_task_id_ini()
+        IF NOT success
+            LOG ERROR result
+            THROW INIFileReadError(result)
+        END IF
+        RETURN result
+    CATCH ini_read_error
+        LOG ERROR "Failed to get template task ID: " + ini_read_error
+        THROW INIFileReadError(ini_read_error)
+    END TRY
+END FUNCTION
+
+// Read Template Task ID from INI File
+FUNCTION read_template_task_id_ini()
+    SET file_path = "config/Set_Template_TaskID.ini"
+    TRY
+        READ config from file_path
+        IF config contains section "TEMPLATE_TASK" AND key "TEMPLATE_TASK_ID"
+            SET template_task_id = INTEGER(config["TEMPLATE_TASK"]["TEMPLATE_TASK_ID"])
+            LOG INFO "Read TEMPLATE_TASK_ID: " + template_task_id + " from " + file_path
+            RETURN TRUE, template_task_id
+        ELSE
+            SET error_message = "TEMPLATE_TASK_ID not found in " + file_path
+            LOG ERROR error_message
+            RETURN FALSE, error_message
+        END IF
+    CATCH ini_read_error
+        LOG ERROR "Failed to read INI file " + file_path + ": " + ini_read_error
+        THROW INIFileReadError("Failed to read INI file " + file_path + ": " + ini_read_error)
+    END TRY
+END FUNCTION
+
+// Get MongoDB Collection
+FUNCTION get_collection(collection_name)
+    TRY
+        SET db = CALL get_db_connection()
+        IF db is NULL
+            LOG ERROR "Database connection failed."
+            THROW DatabaseConnectionError("Database connection failed.")
+        END IF
+        RETURN db[collection_name]
+    CATCH db_error
+        LOG ERROR "Failed to get collection " + collection_name + ": " + db_error
+        THROW DatabaseConnectionError(db_error)
+    END TRY
+END FUNCTION
+
+// Get MongoDB Database Connection
+FUNCTION get_db_connection()
+    SET config_path = "config/DB_Config.ini"
+    TRY
+        IF NOT FILE_EXISTS(config_path)
+            LOG ERROR "Configuration file '" + config_path + "' not found."
+            THROW DatabaseConnectionError("Configuration file '" + config_path + "' not found.")
+        END IF
+        
+        READ config from config_path
+        IF NOT config contains section "DATABASE"
+            LOG ERROR "'DATABASE' section not found in DB_Config.ini"
+            THROW DatabaseConnectionError("'DATABASE' section not found in DB_Config.ini")
+        END IF
+        
+        SET mongo_uri = config["DATABASE"].MONGO_URI
+        SET db_name = config["DATABASE"].DB_NAME
+        IF mongo_uri is EMPTY OR db_name is EMPTY
+            LOG ERROR "Missing MONGO_URI or DB_NAME in DB_Config.ini"
+            THROW DatabaseConnectionError("Missing MONGO_URI or DB_NAME in DB_Config.ini")
+        END IF
+        
+        CONNECT to MongoDB using mongo_uri
+        SET db = MongoDB database db_name
+        RETURN db
+    CATCH db_connection_error
+        LOG ERROR "Error connecting to MongoDB: " + db_connection_error
+        THROW DatabaseConnectionError("Error connecting to MongoDB: " + db_connection_error)
+    END TRY
+END FUNCTION
+```
